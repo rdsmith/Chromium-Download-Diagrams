@@ -1,0 +1,25 @@
+Diagrams in this directory, with owners and notes
+-------------------------------------------------
+
+Anyone may modify these diagrams (presuming you believe you know what
+you're doing); the listed owner is just so that you have someone to
+ask what's going on if you don't believe you know what you're doing
+:-}. 
+
+-- DM_DI_interface.dot (rdsmith): An attempt to sketch out the
+   somewhat messy calls back and forth between the DownloadManager and
+   DownloadItem.  Hopefully to be used as a guide at some point for
+   cleaning up those calls.
+
+-- UI-interface-viewonly.dot (rdsmith): A class inheritance and
+   reference diagram for the download UI system.  This covers the
+   views (Windows) implementation only, as putting all three (or more)
+   together gets messy.  There are minor differences between the
+   systems, but Cocoa and GTK mostly follow this pattern.
+
+-- downloads_flow.dot (rdsmith): Diagram of all of the downloads
+   interthread pathways south of DownloadResourceHandler.
+
+-- download-initiation.dot (rdsmith): Diagram of the different
+   pathways through which a download may be initiated.  
+

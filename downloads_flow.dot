@@ -126,7 +126,8 @@ digraph Download_Startup {
   
   //	Safe download completion path
   DM_MaybeCompleteDownload -> DI_OnDownloadCompleting [color=black];
-  DI_OnDownloadCompleting -> DI_Completed [label="otherwise",color=black]; // Diagram looks much better without???
+  DI_OnDownloadCompleting -> DI_Completed [label="!needs rename",color=black];
+  DI_OnDownloadCompleting -> DFM_CompleteDownload [label="!needs rename",color=red];
   DI_OnDownloadCompleting -> DFM_RenameFinishedDownloadFile [label="needs rename"];
   DFM_RenameFinishedDownloadFile -> DM_OnDownloadRenamedToFinalName;
   DM_OnDownloadRenamedToFinalName -> DFM_CompleteDownload [color=red];
