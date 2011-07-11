@@ -1,0 +1,60 @@
+digraph uiinterface {
+
+    node [style=filled, shape=box];
+
+    // Views
+    node [fillcolor="palegreen"];
+    BrowserView;
+    DownloadShelfView;
+    DownloadShelfContextMenuWin;
+    DownloadItemView;
+
+    // Other annotations
+    node [style=empty];
+    DownloadItem [penwidth=3.0];
+    DownloadItemModel [label="DownloadItemModel\n\nCancel action \nStatusText"];
+    DownloadShelfContextMenu [label="DownloadShelfContextMenu\n\nEnable states\nActions"];
+
+    // ABC
+    node [style=dotted];
+    BrowserWindow;
+    DownloadShelf;
+    BaseDownloadItemModel;
+
+    node [style=solid];
+
+    // Inherits from
+    edge [arrowhead="vee", penwidth=2.0];
+    DownloadShelfView -> DownloadShelf;
+    BrowserView -> BrowserWindow;
+    DownloadShelfContextMenuWin -> DownloadShelfContextMenu;
+    DownloadItemModel -> BaseDownloadItemModel;
+    SavePageModel -> BaseDownloadItemModel;
+
+    // Refers to
+    edge [arrowtail=odiamond, dir=back, penwidth=1.0];
+    DownloadShelfContextMenu -> {DownloadItem, BaseDownloadItemModel, ui_SimpleMenuModel};
+    BaseDownloadItemModel -> DownloadItem;
+    DownloadShelfView -> BrowserView;
+    DownloadShelfView -> DownloadItemView [label="vector"];
+    DownloadItemView -> DownloadShelfView;
+    DownloadItemView -> DownloadItem [label="Observes"];
+
+    // Owns
+    edge [arrowtail=diamond, dir=back];
+    DownloadItemView -> BaseDownloadItemModel;
+    DownloadItemView -> DownloadShelfContextMenuWin;
+    BrowserView -> DownloadShelfView;
+
+    subgraph cluster_legend {
+        label="Legend";
+	Views_Implementation [style=filled, fillcolor="palegreen"];
+	Abstract_BaseClass [style=dotted];
+	Object1;
+	Object2;
+
+	Views_Implementation -> Abstract_BaseClass [arrowhead="vee", penwidth=2.0];
+	Views_Implementation -> Object1 [arrowtail=odiamond, dir=back, penwidth=1.0,label="Refers to"];
+	Views_Implementation -> Object2 [arrowtail=diamond, dir=back, label="Owns"];
+    };
+};

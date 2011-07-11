@@ -1,0 +1,216 @@
+// -*- backup-by-copying: t -*- 
+
+digraph Download_Startup {
+  ranksep=0.25;
+  node [shape=box,style=filled];
+  edge [arrowhead="vee",color=red];
+
+  // Node naming convention:
+  //	* Named by initial routine executed in box.
+  // 	* That routine is named by <classabbrev>_<routinename>
+  //	* Class abbreivations are:
+  //		* RDH: ResourceDispatcherHost
+  //		* DRH: DownloadResourceHandler
+  //		* DFM: DownloadFileManager
+  //		* DM: DownloadManager
+  //		* HB: HistoryBackend
+  //		* DI: DownloadItem
+  //		* du: download_util::
+
+  node [shape=octagon,fillcolor=powderblue];
+  subgraph cluster_RDHTriggers {
+    rank=same;
+    color=invis;
+    node [label="RDH"];
+    RDH_OnResponseStarted;
+    RDH_OnRequestRedirected;
+    RDH_OnWillRead;
+    RDH_OnReadCompleted;
+    RDH_OnResponseCompleted;
+  };
+  RDH_CancelRequest [label="ResourceDispatcherHost::\nCancelRequest"];
+
+  node [shape=box];
+
+  node [fillcolor=powderblue];		// Other IO thread stuff.
+  DRH_OnResponseStarted [label="DownloadResourceHandler::\nOnResponseStarted\n--\n> Create DownloadCreateInfo\n> ResourceDispatcherHost::\nPauseRequest(true)"];
+  DRH_OnWillRead [style=filled, fillcolor=powderblue, label="DownloadResourceHandler::\nOnWillRead\n(Create buffer)"];
+  DRH_OnRequestRedirected [label="DownloadResourceHandler::\nOnRequestRedirected\n(Note url)"];
+  DRH_OnReadCompleted [label="DownloadResourceHandler::\nOnReadCompleted\n(move buffer to shared comm)"];
+  DRH_OnResponseCompleted [label="DownloadResourceHandler::\nOnResponseCompleted"];
+
+  RDH_PauseRequest [fillcolor=powderblue,style=filled, label="ResourceDispatcherHost::\nPauseRequest(false)",shape=octagon];
+
+  node [fillcolor=palegreen];		// UI Thread
+  DM_OnQueryDownloadEntriesComplete [label="DownloadManager\nOnQueryDownloadEntriesComplete\n> history -> history_downloads_\l"];
+  DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l"];
+  DM_UpdateDownload [label="DownloadManager::\nUpdateDownload\n> Update UI displays\l> Update History Item\l> Update App Icon\l"];
+  DM_StartDownload [label="DownloadManager::\nStartDownload\n"];
+  DM_OnPathExistenceAvailable [label="DownloadManager::\nOnPathExistenceAvailable\n> May prompt for file\l> Attach DownloadItem\l"];
+  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName\n> Check and set uniquifier\l> Update history with name\l"];
+  DM_DownloadCancelled [label="DownloadManager::\nDownloadCancelled\n>Update History\l"];
+  DI_OnDownloadRenamedToFinalName [label="DownloadItem::\nOnDownloadRenamedToFinalName"];
+  DM_OnAllDataSaved [label="DownloadManager::\nOnAllDataSaved\n> DownloadItem::OnAllDataSaved\l>> Set all_data_saved_\l"];
+  DM_MaybeCompleteDownload [label="[ThreadJoin]\nDownloadManager::\nMaybeCompleteDownload\n> Remove from Queues\l> Update item and history state\l"];
+  DI_OnDownloadCompleting [label="DownloadItem::\nOnDownloadCompleting"];
+  User_Cancel [label="User Cancel or Remove"];
+  DI_Completed [label="DownloadItem::\nCompleted\n\n> Open if extenion install or auto-open\l> Mark as auto-opened if temporary\l> Update observers\l> If name finalized, notify observers.\l"];
+  DM_OnCreateDownloadEntryComplete [label="DownloadManager\nOnCreateDownloadEntryComplete\n> download -> history_downloads_\l> ShowDownloadInBrowser\l> NotifyObservers\l"];
+  DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated\n>> Set safety state\l> Update Observers\l"];
+  DangerousConfirmationDialog [label="Dangerous Confirmation Dialog"];
+  DSBC_CheckDownloadUrl [label="DownloadSBClient::\nCheckDownloadUrl"];
+  DM_CheckDownloadUrlDone [label="DownloadManager::\nCheckDownloadUrlDone\n>DownloadHistory::CheckVisitedReferrerBefore"];
+
+  DM_CheckVisitedReferrerBeforeDone [label="DownloadManager::\nCheckVisitedReferrerBeforeDone\n>(dangerous?/suggest path)"];
+
+  node [fillcolor=grey];	   // History/database thread
+  HistoryService [label="HistoryService"];
+  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload"];
+  
+  node [fillcolor=bisque];	// FILE Thread
+  DFM_CreateDownloadFile [label="DownloadFileManager::\nCreateDownloadFile\n> Start In Progress timer if needed\l"];
+  DFM_UpdateInProgressDownloads [label="[Timer based; input enables/disables]\n\nDownloadFileManager::\nUpdateInProgressDownloads"];
+  DM_CheckIfSuggestedPathExists [label="DownloadManager::\nCheckIfSuggestedPathExists\n(create empty file)"];
+  DFM_UpdateDownload [label="DownloadFileManager::\nUpdateDownload\n(write data to file)"];
+  DFM_OnResponseCompleted [label="DownloadFileManager::\nOnResponseCompleted\n> cleanup\l> Stop In Progress timer\l  if no downloads active\l"];
+  DFM_CancelDownload [label="DownloadFileManager::\nCancelDownload\n> Remove from list\l> Delete if name active\l"];
+  OpenItem [label="platform_util::\nOpenItem"];
+  DFM_RenameInProgressDownloadFile [label="DownloadFileManager::\nRenameInProgressDownloadFile\n> Rename\l"];
+  DFM_RenameFinishedDownloadFile [label="DownloadFileManager::\nRenameFinishedDownloadFile\n> Uniquify (if final & dangerous)\l> Rename\l> Annoatate (if MacOSX)\l"];
+  DFM_CancelDownloadOnRename [label="DownloadFileManager::\nCancelDownloadOnRename\n"];
+  DFM_CompleteDownload [label="DownloadFileManager::\nCompleteDownload\n> Detach download file\l"];
+
+  node [fillcolor=white];
+  DRH_CancelRequest [label="DownloadRequestHandle::\nCancelRequest"];
+
+  // Relationships
+
+  // Function calls
+  edge [color=black];
+
+  // 	ResourceDispatcherHost to DownloadResourceHandler
+  RDH_OnResponseStarted -> DRH_OnResponseStarted [label="(Indirectly)",style=dashed];
+  RDH_OnRequestRedirected -> DRH_OnRequestRedirected;
+  RDH_OnWillRead -> DRH_OnWillRead;
+  RDH_OnReadCompleted -> DRH_OnReadCompleted;
+  RDH_OnResponseCompleted -> DRH_OnResponseCompleted;
+
+  // Different thread pathways.
+  edge [color=red];   // Will have some function calls.
+
+  // 	Initialilization path
+  DRH_OnResponseStarted -> DFM_StartDownload;
+  DFM_StartDownload -> DFM_CreateDownloadFile;
+  DFM_CreateDownloadFile -> DM_StartDownload;
+  DM_StartDownload -> DSBC_CheckDownloadUrl;
+  DSBC_CheckDownloadUrl -> DM_CheckDownloadUrlDone [label="(Indirectly)",style=dashed];
+  DM_CheckDownloadUrlDone -> DM_CheckVisitedReferrerBeforeDone [label="(Indirectly checks\nvisited before today)",style=dashed];
+  DM_CheckVisitedReferrerBeforeDone -> DM_CheckIfSuggestedPathExists;
+  DM_CheckIfSuggestedPathExists -> DM_OnPathExistenceAvailable;
+  DM_OnPathExistenceAvailable -> HistoryBackend_CreateDownload -> DM_OnCreateDownloadEntryComplete;
+  DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload [color=black,samehead="join"];
+  DM_OnCreateDownloadEntryComplete -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
+  DFM_CreateDownloadFile -> RDH_PauseRequest;
+
+  // 	Completion path
+  DRH_OnResponseCompleted -> DFM_OnResponseCompleted;
+  DFM_OnResponseCompleted -> DM_OnAllDataSaved [label="download_manager exists"];
+  DM_OnAllDataSaved -> DM_MaybeCompleteDownload [color=black,samehead="join"];
+
+
+  //	Read path
+  DRH_OnReadCompleted -> DFM_UpdateDownload [label="shared comm empty"];
+  
+  // 	Intermediate/final file renaming
+  DM_OnPathExistenceAvailable -> DFM_RenameInProgressDownloadFile;
+  
+  //	Safe download completion path
+  DM_MaybeCompleteDownload -> DI_OnDownloadCompleting [color=black];
+  DI_OnDownloadCompleting -> DI_Completed [label="otherwise",color=black]; // Diagram looks much better without???
+  DI_OnDownloadCompleting -> DFM_RenameFinishedDownloadFile [label="needs rename"];
+  DFM_RenameFinishedDownloadFile -> DM_OnDownloadRenamedToFinalName;
+  DM_OnDownloadRenamedToFinalName -> DFM_CompleteDownload [color=red];
+  DM_OnDownloadRenamedToFinalName -> DI_OnDownloadRenamedToFinalName [color=black];
+  DI_OnDownloadRenamedToFinalName -> DI_Completed [color=black,label="needed rename && SAFE"];
+  DI_Completed -> OpenItem [label="Download auto opens\n and not Mac"];
+
+  // 	Dangerous download completion path
+  DangerousConfirmationDialog -> DM_DangerousDownloadValidated [label="Validated",color=black];
+  DM_DangerousDownloadValidated -> DM_MaybeCompleteDownload [color=black,samehead="join"];
+
+  // 	History Initialization
+  HistoryService -> DM_OnQueryDownloadEntriesComplete [label="History loaded"];
+
+  // 	Error pathways
+  edge [style=dotted];
+  DFM_StartDownload -> DRH_CancelRequest [label="no download\nmanager",color=black];
+  DFM_CreateDownloadFile -> DRH_CancelRequest [label="file init\fails",color=black];
+  User_Cancel -> DM_DownloadCancelled [color=black];
+  DangerousConfirmationDialog -> DM_DownloadCancelled [label="Canceled",color=black];
+  DFM_RenameInProgressDownloadFile -> DFM_CancelDownloadOnRename [color=black, label="Rename failed"];
+  DFM_CancelDownloadOnRename -> DM_DownloadCancelled [color=red];
+  DFM_CancelDownloadOnRename -> DRH_CancelRequest [label="No Download\nManager",color=black];
+  DFM_RenameFinishedDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
+  DFM_OnResponseCompleted -> DFM_CompleteDownload [color=black,weight=0,label="No download manager"];
+  DRH_CancelRequest -> RDH_CancelRequest;
+
+  edge [style=solid,color=black];
+  DM_DownloadCancelled -> DRH_CancelRequest;
+  DM_DownloadCancelled -> DFM_CancelDownload;
+
+  //	Timer control
+  edge [style=dashed,color=red];
+  DFM_CreateDownloadFile -> DFM_UpdateInProgressDownloads;
+  DFM_OnResponseCompleted -> DFM_UpdateInProgressDownloads;
+  DFM_CancelDownload -> DFM_UpdateInProgressDownloads;
+  DFM_UpdateInProgressDownloads -> DM_UpdateDownload [label="For Each Download",style=solid];
+
+  // Layout control
+  edge [style=invis];
+  DRH_OnWillRead -> HistoryService;
+  DRH_OnResponseStarted -> DRH_OnRequestRedirected -> DRH_OnWillRead -> DRH_OnReadCompleted -> DRH_OnResponseCompleted;
+
+  subgraph cluster_cancel_pathway {
+    color=invis;
+    DRH_CancelRequest;
+    DFM_CancelDownload;
+    DM_DownloadCancelled;
+    User_Cancel;
+    DFM_UpdateInProgressDownloads;
+  };
+
+  subgraph drh {
+    rank=same;
+    DRH_OnResponseStarted;
+    DRH_OnResponseCompleted;
+    DRH_OnRequestRedirected;
+    DRH_OnWillRead;
+    DRH_OnReadCompleted;
+  };
+
+  subgraph cluster_legend {
+    label="Legend";
+    edge [style=normal];
+    blank1 [label="",style=filled,fillcolor=white];
+    blank2 [label="",style=filled,fillcolor=white];
+    blank3 [label="",style=filled,fillcolor=white];
+    blank4 [label="",style=filled,fillcolor=white];
+    blank5 [label="",style=filled,fillcolor=white];
+    blank6 [label="",style=filled,fillcolor=white];
+    blank7 [label="",style=filled,fillcolor=white];
+    blank8 [label="",style=filled,fillcolor=white];
+    UI_Thread [style=filled,fillcolor=palegreen];		  
+    IO_Thread [style=filled, fillcolor=powderblue];
+    blank3->blank4 [color=black,label="Function call"]
+    blank1 -> blank2 [color=red,label="Async Message"];
+    blank2->blank5 [color=invis];
+    blank4->blank7 [color=invis];
+    blank5->blank6 [color=red,style=dotted,label="Error path"];
+    blank7->blank8 [color=red,style=dashed,label="Timer control"]
+    FILE_Thread [style=filled, fillcolor=bisque];
+    History_Thread [style=filled, fillcolor=grey];
+    ResourceDispatcherHost [shape=octagon,style=filled,fillcolor=powderblue];
+    UI_Thread -> IO_Thread -> FILE_Thread -> History_Thread -> ResourceDispatcherHost  [style=invis,weight=10];
+  };
+}
+

@@ -1,0 +1,136 @@
+digraph g {
+  rankdir=LR;
+  subgraph cluster_DownloadItem {
+    name="DownloadItem";
+
+    // State accessors (const members, effectively).
+    node [style=filled, fillcolor=grey];
+    DI_IsComplete [label="DownloadItem::\nIsComplete"];
+    DI_IsPartialDownload [label="DownloadItem::\nIsPartialDownload"];
+    DI_all_data_saved [label="DownloadItem::\nall_data_saved"];
+    DI_db_handle [label="DownloadItem::\ndb_handle"];
+    DI_id [label="DownloadItem::\nid"];
+    DI_is_extension_install [label="DownloadItem::\nis_extension_install"];
+    DI_is_otr [label="DownloadItem::\nis_otr"];
+    DI_is_paused [label="DownloadItem::\nis_paused"];
+    DI_is_temporary [label="DownloadItem::\nis_temporary"];
+    DI_received_bytes [label="DownloadItem::\nreceived_bytes"];
+    DI_safety_state [label="DownloadItem::\nsafety_state"];
+    DI_total_bytes [label="DownloadItem::\ntotal_bytes"];
+    DI_MatchesQuery [label="DownloadItem::\nMatchesQuery"];
+
+    // State changers
+    node [fillcolor=orange];
+    DI_CONSTRUCTOR [label="DownloadItem::\nCONSTRUCTOR"];
+    DI_Cancel [label="DownloadItem::\nCancel"];
+    DI_DangerousDownloadValidated [label="DownloadItem::\nDangerousDownloadValidated"];
+    DI_Finished [label="DownloadItem::\nFinished"];
+    DI_Interrupted [label="DownloadItem::\nInterrupted"];
+    DI_MarkAsComplete [label="DownloadItem::\nMarkAsComplete"];
+    DI_OnAllDataSaved [label="DownloadItem::\nOnAllDataSaved"];
+    DI_OnDownloadFinished [label="DownloadItem::\nOnDownloadFinished"];
+    DI_OnDownloadRenamedToFinalName [label="DownloadItem::\nOnDownloadRenamedToFinalName"];
+    DI_OnNAmeFinalized [label="DownloadItem::\nOnNAmeFinalized"];
+    DI_OpenDownload [label="DownloadItem::\nOpenDownload"];
+    DI_OpenFilesBasedOnExtension [label="DownloadItem::\nOpenFilesBasedOnExtension"];
+    DI_Remove [label="DownloadItem::\nRemove"];
+    DI_SetFileCheckResults [label="DownloadItem::\nSetFileCheckResults"];
+    DI_ShouldOpenFileBasedOnExtension [label="DownloadItem::\nShouldOpenFileBasedOnExtension"];
+    DI_TogglePause [label="DownloadItem::\nTogglePause"];
+    DI_Update [label="DownloadItem::\nUpdate"];
+    DI_UpdateObservers [label="DownloadItem::\nUpdateObservers"];
+    DI_set_db_handle [label="DownloadItem::\nset_db_handle"];
+    DI_set_path_uniquifier [label="DownloadItem::\nset_path_uniquifier"];
+    DI_set_safety_state [label="DownloadItem::\nset_safety_state"];
+  };
+  
+  // State accessors (don't change either DM or DI state).
+  node [style=filled, fillcolor=grey];
+  DM_GetReceivedDownloadBytes [label="DownloadManager::\nGetReceivedDownloadBytes"];
+  DM_GetTotalDownloadBytes [label="DownloadManager::\nGetTotalDownloadBytes"];
+  DM_GetCurrentDownloads [label="DownloadManager::\nGetCurrentDownloads"];
+  DM_GetDownloadItem [label="DownloadManager::\nGetDownloadItem"];
+  DM_IsDownloadProgressKnown [label="DownloadManager::\nIsDownloadProgressKnown"];
+  DM_IsDownloadReadyForCompletion [label="DownloadManager::\nIsDownloadReadyForCompletion"];
+  DM_SearchDownloads [label="DownloadManager::\nSearchDownloads"];
+  DM_ShouldOpenFileBasedOnExtension [label="DownloadManager::\nShouldOpenFileBasedOnExtension"];
+  DM_download_prefs [label="DownloadManager::\ndownload_prefs"];
+  DM_profile [label="DownloadManager::\nprofile"];
+
+  node [style=filled, fillcolor=orange];
+  DM_AttachDownloadItem [label="DownloadManager::\nAttachDownloadItem"];
+  DM_CreateDownloadItem [label="DownloadManager::\nCreateDownloadItem"];
+  DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated"];
+  DM_DownloadCancelled [label="DownloadManager::\nDownloadCancelled"];
+  DM_MaybeCompleteDownload [label="DownloadManager::\nMaybeCompleteDownload"];
+  DM_OnAllDataSaved [label="DownloadManager::\nOnAllDataSaved"];
+  DM_OnCreateDownloadEntryComplete [label="DownloadManager::\nOnCreateDownloadEntryComplete"];
+  DM_OnDownloadError [label="DownloadManager::\nOnDownloadError"];
+  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName"];
+  DM_OnQueryDownloadEntriesComplete [label="DownloadManager::\nOnQueryDownloadEntriesComplete"];
+  DM_PauseDownload [label="DownloadManager::\nPauseDownload"];
+  DM_RemoveDownload [label="DownloadManager::\nRemoveDownload"];
+  DM_RemoveFromActiveList [label="DownloadManager::\nRemoveFromActiveList"];
+  DM_Shutdown [label="DownloadManager::\nShutdown"];
+  DM_UpdateDownload [label="DownloadManager::\nUpdateDownload"];
+  DM_OnResponseCompleted [label="DownloadManager::\nOnResponseCompleted"];
+
+  // DM->DI
+  DM_Shutdown -> {DI_safety_state, DI_IsPartialDownload, DI_IsComplete,
+		  DI_Remove, DI_Cancel} ;
+  DM_GetCurrentDownloads -> {DI_is_temporary, DI_IsPartialDownload,
+			     DI_safety_state };
+  DM_SearchDownloads -> {DI_is_temporary, DI_is_extension_install,
+			 DI_is_otr, DI_MatchesQuery};
+
+  DM_CreateDownloadItem -> DI_CONSTRUCTOR;
+  DM_AttachDownloadItem -> DI_SetFileCheckResults;
+  DM_UpdateDownload -> DI_Update;
+  DM_OnAllDataSaved -> DI_OnAllDataSaved;
+  DM_IsDownloadReadyForCompletion -> { DI_all_data_saved,
+					  DI_safety_state, DI_db_handle };
+  // DM_MaybeCompleteDownload -> {DI_all_data_saved, DI_db_handle, DI_safety_state};
+
+  DM_MaybeCompleteDownload -> { DI_MarkAsComplete, DI_OnDownloadFinished };
+
+  DM_OnDownloadRenamedToFinalName -> {DI_safety_state,
+			 DI_set_path_uniquifier,
+			 DI_OnDownloadRenamedToFinalName};
+  DM_DownloadCancelled -> {DI_db_handle };
+  DM_OnDownloadError -> {DI_db_handle, DI_Interrupted};
+
+  DM_PauseDownload -> {DI_is_paused};
+
+  DM_IsDownloadProgressKnown -> {DI_total_bytes};
+  DM_GetReceivedDownloadBytes -> {DI_received_bytes};
+  DM_GetTotalDownloadBytes -> {DI_total_bytes};
+  DM_DangerousDownloadValidated -> {DI_set_safety_state,DI_UpdateObservers};
+  DM_OnQueryDownloadEntriesComplete -> {DI_CONSTRUCTOR};
+  DM_OnCreateDownloadEntryComplete -> {DI_set_db_handle,
+			 DI_UpdateObservers};
+  DM_GetDownloadItem -> {DI_id};
+
+  // DI->DM
+  DI_ShouldOpenFileBasedOnExtension ->
+			 DM_ShouldOpenFileBasedOnExtension;
+  DI_OpenFilesBasedOnExtension -> DM_download_prefs;
+  DI_OpenDownload -> DM_profile;
+  DI_DangerousDownloadValidated -> DM_DangerousDownloadValidated;
+  DI_Cancel -> DM_DownloadCancelled;
+  DI_Finished -> {DM_profile, DM_ShouldOpenFileBasedOnExtension,
+			 DM_RemoveFromActiveList};
+  DI_Remove -> DM_RemoveDownload;
+  DI_TogglePause -> DM_PauseDownload;
+  DI_OnNAmeFinalized -> DM_RemoveFromActiveList;
+  DI_MatchesQuery -> DM_profile;
+
+  // DM->DM
+  DM_OnDownloadRenamedToFinalName -> DM_GetDownloadItem;
+  {DM_GetReceivedDownloadBytes,DM_GetTotalDownloadBytes} -> DM_IsDownloadProgressKnown;
+  DM_MaybeCompleteDownload -> DM_IsDownloadReadyForCompletion;
+  DM_OnResponseCompleted -> {DM_OnAllDataSaved, DM_OnDownloadError};
+  DM_DangerousDownloadValidated -> DM_MaybeCompleteDownload;
+
+};
+ 
+

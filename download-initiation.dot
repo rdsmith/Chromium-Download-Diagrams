@@ -1,0 +1,40 @@
+digraph initiation {
+    node [shape=box,style=filled];
+
+    node [fillcolor=powderblue];
+    DownloadResourceHandler [label="DownloadResourceHandler\n\n- Initializes from input values\l- download_id from DFM::GetNextId()\l- prompt... = save_as_ && null DownloadSaveInfo\l"];
+    RDH_BeginDownload [label="ResourceDispatcherHost::\nBeginDownload\n\n- Blocks if shutdown, renderer disallowed,\l  url unhandleable.\l- Creates URLReqeust, RDHRI, SBRH (opt),\l  DownloadResourceHandler"];
+
+    du_DownloadUrl [label="download_util::\nDownloadUrl\n\n- Gets URLRequestContext and sets charset\l"];
+
+    DownloadThrottlingResourceHandler [label="DownloadThrottlingesourceHandler\n"];
+
+    node[fillcolor=palegreen];
+    DM_DownloadUrlToFile [label="DownloadManager::\nDownloadUrlToFile\n\n- Get ids from tab_contents and\l  request_context_getter_ from self.\l"];
+
+    DM_DownloadUrl [label="DownloadManager::\nDownloadUrl"];
+
+    node [shape=ellipse];
+    SaveStarAs [label="Save * As"];
+    SavePackageBail [label="Save Package Bail"];
+    DragAndDrop [label="Drag and drop"];
+    ImageBurn [label="Image Burn"];
+    Navigation [fillcolor="powderblue", label="Navigation"];
+
+    // Connections
+    edge [color=black];
+    DM_DownloadUrl -> DM_DownloadUrlToFile [label="Null DownloadSaveInfo()"];
+    du_DownloadUrl -> RDH_BeginDownload [label="save_as = true"];
+    RDH_BeginDownload -> DownloadResourceHandler;
+    DownloadThrottlingResourceHandler -> DownloadResourceHandler [label="Null DownloadSaveInfo()\nsave_as = false"];
+    SaveStarAs -> DM_DownloadUrl;
+    DragAndDrop -> DM_DownloadUrlToFile;
+    ImageBurn -> DM_DownloadUrlToFile;
+    SavePackageBail -> DM_DownloadUrl;
+    Navigation -> DownloadThrottlingResourceHandler;
+
+    edge [color=red];
+    DM_DownloadUrlToFile -> du_DownloadUrl;
+
+};
+
