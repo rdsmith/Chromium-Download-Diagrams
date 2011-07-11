@@ -76,7 +76,7 @@ digraph Download_Startup {
   DFM_CancelDownload [label="DownloadFileManager::\nCancelDownload\n> Remove from list\l> Delete if name active\l"];
   OpenItem [label="platform_util::\nOpenItem"];
   DFM_RenameInProgressDownloadFile [label="DownloadFileManager::\nRenameInProgressDownloadFile\n> Rename\l"];
-  DFM_RenameFinishedDownloadFile [label="DownloadFileManager::\nRenameFinishedDownloadFile\n> Uniquify (if final & dangerous)\l> Rename\l> Annoatate (if MacOSX)\l"];
+  DFM_RenameCompletingDownloadFile [label="DownloadFileManager::\nRenameCompletingDownloadFile\n> Uniquify (if final & dangerous)\l> Rename\l> Annoatate (if MacOSX)\l"];
   DFM_CancelDownloadOnRename [label="DownloadFileManager::\nCancelDownloadOnRename\n"];
   DFM_CompleteDownload [label="DownloadFileManager::\nCompleteDownload\n> Detach download file\l"];
 
@@ -128,8 +128,8 @@ digraph Download_Startup {
   DM_MaybeCompleteDownload -> DI_OnDownloadCompleting [color=black];
   DI_OnDownloadCompleting -> DI_Completed [label="!needs rename",color=black];
   DI_OnDownloadCompleting -> DFM_CompleteDownload [label="!needs rename",color=red];
-  DI_OnDownloadCompleting -> DFM_RenameFinishedDownloadFile [label="needs rename"];
-  DFM_RenameFinishedDownloadFile -> DM_OnDownloadRenamedToFinalName;
+  DI_OnDownloadCompleting -> DFM_RenameCompletingDownloadFile [label="needs rename"];
+  DFM_RenameCompletingDownloadFile -> DM_OnDownloadRenamedToFinalName;
   DM_OnDownloadRenamedToFinalName -> DFM_CompleteDownload [color=red];
   DM_OnDownloadRenamedToFinalName -> DI_OnDownloadRenamedToFinalName [color=black];
   DI_OnDownloadRenamedToFinalName -> DI_Completed [color=black,label="needed rename && SAFE"];
@@ -151,7 +151,7 @@ digraph Download_Startup {
   DFM_RenameInProgressDownloadFile -> DFM_CancelDownloadOnRename [color=black, label="Rename failed"];
   DFM_CancelDownloadOnRename -> DM_DownloadCancelled [color=red];
   DFM_CancelDownloadOnRename -> DRH_CancelRequest [label="No Download\nManager",color=black];
-  DFM_RenameFinishedDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
+  DFM_RenameCompletingDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
   DFM_OnResponseCompleted -> DFM_CompleteDownload [color=black,weight=0,label="No download manager"];
   DRH_CancelRequest -> RDH_CancelRequest;
 
