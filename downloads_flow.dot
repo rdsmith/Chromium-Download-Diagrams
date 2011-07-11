@@ -60,6 +60,9 @@ digraph Download_Startup {
   DangerousConfirmationDialog [label="Dangerous Confirmation Dialog"];
   DSBC_CheckDownloadUrl [label="DownloadSBClient::\nCheckDownloadUrl"];
   DM_CheckDownloadUrlDone [label="DownloadManager::\nCheckDownloadUrlDone\n>DownloadHistory::CheckVisitedReferrerBefore"];
+  DM_OnResponseCompleted [label="DownloadManager::\nOnResponseCompleted"];
+  DM_OnDownloadError [label="DownloadManager::\nOnDownloadError\n> Remove from history\l"];
+  DI_Interrupted [label="DownloadItem::Interrupted\n> Update item\l> Notify Observers\l"];
 
   DM_CheckVisitedReferrerBeforeDone [label="DownloadManager::\nCheckVisitedReferrerBeforeDone\n>(dangerous?/suggest path)"];
 
@@ -114,7 +117,8 @@ digraph Download_Startup {
 
   // 	Completion path
   DRH_OnResponseCompleted -> DFM_OnResponseCompleted;
-  DFM_OnResponseCompleted -> DM_OnAllDataSaved [label="download_manager exists"];
+  DFM_OnResponseCompleted -> DM_OnResponseCompleted [label="download_manager exists"];
+  DM_OnResponseCompleted -> DM_OnAllDataSaved [color=black];
   DM_OnAllDataSaved -> DM_MaybeCompleteDownload [color=black,samehead="join"];
 
 
@@ -154,10 +158,13 @@ digraph Download_Startup {
   DFM_RenameCompletingDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
   DFM_OnResponseCompleted -> DFM_CompleteDownload [color=black,weight=0,label="No download manager"];
   DRH_CancelRequest -> RDH_CancelRequest;
+  DM_OnResponseCompleted -> DM_OnDownloadError [color=black];
 
   edge [style=solid,color=black];
   DM_DownloadCancelled -> DRH_CancelRequest;
   DM_DownloadCancelled -> DFM_CancelDownload;
+  DM_OnDownloadError -> DI_Interrupted;
+  DM_OnDownloadError -> DFM_CancelDownload [color=red];
 
   //	Timer control
   edge [style=dashed,color=red];
