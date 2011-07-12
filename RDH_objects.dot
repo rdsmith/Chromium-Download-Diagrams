@@ -1,0 +1,96 @@
+digraph ResourceDispatcherHost {
+	rankdir=BT;
+	node [shape=box];
+
+ResourceDispatcherHost -> PendingRequestList [arrowhead=dot];
+PendingRequestList -> URLRequest [arrowhead=dot,
+																	label="map GlobalRequestID to"];
+URLRequest -> ResourceDispatcherHostRequestInfo
+[arrowhead=dot, label="through SetRequestInfo()"];
+ResourceDispatcherHostRequestInfo -> ResourceHandler
+[arrowhead=dot, label="handler_"];
+URLRequest -> URLRequestJob [ arrowhead=dot, label="job_" ];
+
+subgraph {
+	RequestResource_ResourceHandlers -> OfflineResourceHandler_rr;
+	OfflineResourceHandler_rr -> SafeBrowsingResourceHandler_rr;
+	SafeBrowsingResourceHandler_rr -> BufferedResourceHandler_rr;
+	BufferedResourceHandler_rr -> CrossSiteResourceHandler_rr;
+	CrossSiteResourceHandler_rr -> PrerenderResourceHandler_rr;
+	PrerenderResourceHandler_rr -> RedirectToFileResourceHandler_rr;
+	RedirectToFileResourceHandler_rr -> AsyncResourceHandler_rr;
+	RedirectToFileResourceHandler_rr -> SyncResourceHandler_rr;
+	BufferedResourceHandler_rr -> X509UserCertResourceHandler_rr;
+	BufferedResourceHandler_rr -> DownloadThrottlingResourceHandler_rr;
+	DownloadThrottlingResourceHandler_rr -> DownloadResourceHandler_rr_dtr;
+
+RequestResource_ResourceHandlers
+[label="ResourceHandler chain for RequestResource and SyncLoad"];
+
+SyncResourceHandler_rr
+[label="SyncResourceHandler\nIf sync_result"];
+
+AsyncResourceHandler_rr [label="AsyncResourceHandler\nIf !sync_result"];
+
+RedirectToFileResourceHandler_rr
+[label="RedirectToFileResourceHandler\nIf request_data.download_to_file"];
+
+PrerenderResourceHandler_rr
+[label="PrerenderResourceHandler\nIf prerendering"];
+
+CrossSiteResourceHandler_rr
+[label="CrossSiteResourceHandler\nIf renderer process has pending cross site requests",tooltip="Foo" ];
+
+SafeBrowsingResourceHandler_rr
+[label="SafeBrowsingResourceHandler\nIf safe browsing is enabled"];
+
+OfflineResourceHandler_rr
+[label="OfflineResourceHandler\nIf OS_CHROMEOS"];
+
+BufferedResourceHandler_rr
+[label="BufferedResourceHandler"];
+
+X509UserCertResourceHandler_rr
+[label="X509UserCertResourceHandler\nIf mime_type==application/x-x509-user-cert"];
+
+DownloadThrottlingResourceHandler_rr
+[label="DownloadThrottlingResourceHandler\nIf request is a download"];
+
+DownloadResourceHandler_rr_dtr
+[label="DownloadResourceHandler\nAfter ContinueDownload callback"];
+
+}
+
+subgraph {
+	BeginDownload_ResourceHandlers -> SafeBrowsingResourceHandler_bd;
+	SafeBrowsingResourceHandler_bd -> DownloadResourceHandler_bd;
+
+SafeBrowsingResourceHandler_bd
+[label="SafeBrowsingResourceHandler\nIf safe browsing is enabled"];
+
+DownloadResourceHandler_bd
+[label="DownloadResourceHandler"];
+
+BeginDownload_ResourceHandlers
+[label="ResourceHandler chain for BeginDownload"];
+}
+
+subgraph {
+	BeginSaveFile_ResourceHandlers -> SaveFileResourceHandler_bsf;
+
+SaveFileResourceHandler_bsf
+[label="SaveFileResourceHandler"];
+
+BeginSaveFile_ResourceHandlers
+[label="ResourceHandler chain for BeginSaveFile"];
+}
+
+subgraph {
+	URLRequestHttpJob -> URLRequestJob [arrowhead="empty"];
+	URLRequestFileJob -> URLRequestJob [arrowhead="empty"];
+	URLRequestFtpJob -> URLRequestJob [arrowhead="empty"];
+	URLRequestAboutJob -> URLRequestJob [arrowhead="empty"];
+	URLRequestDataJob -> URLRequestJob [arrowhead="empty"];
+}
+
+}

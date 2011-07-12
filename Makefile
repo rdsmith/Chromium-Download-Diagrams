@@ -1,10 +1,12 @@
 .PHONY: all clean
 
 source_files = 				\
-	download-initiation.dot		\
 	DM_DI_interface.dot		\
+	RDH_objects.dot			\
 	UI-interface-viewonly.dot	\
-	downloads_flow.dot
+	download-initiation.dot		\
+	downloads_flow.dot		\
+	filename-determination-control-flow.dot
 
 svg_files = $(source_files:.dot=.svg)
 
