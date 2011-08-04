@@ -156,7 +156,7 @@ digraph Download_Startup {
   DFM_CancelDownloadOnRename -> DM_DownloadCancelled [color=red];
   DFM_CancelDownloadOnRename -> DRH_CancelRequest [label="No Download\nManager",color=black];
   DFM_RenameCompletingDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
-  DFM_OnResponseCompleted -> DFM_CompleteDownload [color=black,weight=0,label="No download manager"];
+  DFM_OnResponseCompleted -> DFM_CancelDownload [color=black,weight=0,label="No download manager"];
   DRH_CancelRequest -> RDH_CancelRequest;
   DM_OnResponseCompleted -> DM_OnDownloadError [color=black];
 
