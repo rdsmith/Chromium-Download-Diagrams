@@ -1,0 +1,340 @@
+// DM__ => DownloadManager::
+// DI__ => DownloadItem::
+// du__ => download_util::
+// DH__ => DownloadHistory::
+// DFM__ => DownloadFileManager::
+digraph DownloadControlFlowBefore {
+	node [shape=box, style=filled];
+
+DM__StartDownload -> DownloadSBClient__CheckDownloadUrl;
+
+DownloadSBClient__CheckDownloadUrl -> DM__CheckDownloadUrlDone
+[style="dashed", label="indirectly"];
+
+DM__CheckDownloadUrlDone -> DI__MarkUrlDangerous
+[label="if is_dangerous_url",
+ dir=both];
+
+DM__CheckDownloadUrlDone -> DH__CheckVisitedReferrerBefore;
+
+DH__CheckVisitedReferrerBefore -> DM__CheckVisitedReferrerBeforeDone
+[style="dashed", label="indirectly"];
+
+DM__CheckVisitedReferrerBeforeDone -> UserScript__IsURLUserScript
+[dir=both];
+
+DM__CheckVisitedReferrerBeforeDone -> du__GenerateFileNameFromRequest
+[dir=both];
+
+du__GenerateFileNameFromRequest -> du__GenerateFileNameInternal
+[dir=both];
+
+du__GenerateFileNameInternal -> net__GetSuggestedFilename
+[dir=both];
+
+// External dependencies
+ngsfn_ui_callers -> net__GetSuggestedFilename
+[dir=both];
+
+ngsfn_ui_callers
+[
+ label="SavePackage::GenerateFileName\nweb_drag_source.mm:GetFileNameFromDragData\nTabContentsDragWin::PrepareDragForDownload\nos_exchange_data_provider_win.cc:CreateValidFileNameFromTitle",
+ fillcolor=yellowgreen
+ ];
+
+weburlloader__PopulateURLResponse -> net__GetSuggestedFilename
+[dir=both];
+
+weburlloader__PopulateURLResponse
+[
+ label="webkit_glue::PopulateURLResponse"
+ ];
+
+bookmark_utils__GetNameForURL -> net__GetSuggestedFilename
+[dir=both];
+
+du__GenerateFileNameInternal -> du__GenerateSafeFileName
+[dir=both];
+
+du__GenerateSafeFileName -> du__GenerateExtension
+[dir=both];
+
+// External dependencies
+SavePackage__ContinueSave -> du__GenerateSafeFileName
+[dir=both];
+
+du__GenerateExtension -> net__GetPreferredExtensionForMimeType
+[dir=both];
+
+DM__CheckVisitedReferrerBeforeDone -> DM__ShouldOpenFileBasedOnExtension
+[dir=both];
+
+DM__CheckVisitedReferrerBeforeDone -> DownloadPrefs__IsDownloadPathManaged
+[dir=both];
+
+DM__CheckVisitedReferrerBeforeDone -> DM__IsDangerous
+[dir=both];
+
+DM__CheckVisitedReferrerBeforeDone -> DM__CheckIfSuggestedPathExists
+[ style="dotted" ];
+
+DM__CheckIfSuggestedPathExists -> file_util__API
+[dir=both];
+DM__CheckIfSuggestedPathExists -> du__GetUniquePathNumberWithCrDownload
+[dir=both];
+DM__CheckIfSuggestedPathExists -> DM__OnPathExistenceAvailable
+[style=dotted];
+
+DM__OnPathExistenceAvailable -> SelectFileDialog__SelectFile
+[label="if save_as()"];
+
+SelectFileDialog__SelectFile -> DM__FileSelected
+[label="if file selected"];
+SelectFileDialog__SelectFile -> DM__FileSelectionCanceled
+[label="if file selection cancelled"];
+
+DM__FileSelected -> DM__ContinueDownloadWithPath;
+DM__FileSelectionCanceled -> DM__DownloadCancelledInternal;
+
+DM__ContinueDownloadWithPath -> DI__OnPathDetermined
+[dir=both];
+DM__ContinueDownloadWithPath -> DI__UpdateTarget
+[dir=both];
+DM__ContinueDownloadWithPath -> DM__UpdateAppIcon
+[dir=both];
+DM__ContinueDownloadWithPath -> DI__IsDangerous
+[dir=both];
+DM__ContinueDownloadWithPath -> DFM__RenameInProgressDownloadFile
+[style=dotted];
+DM__ContinueDownloadWithPath -> DI__Rename;
+DM__ContinueDownloadWithPath -> DH__AddEntry;
+
+DH__AddEntry -> DM__OnCreateDownloadEntryComplete
+[label="indirect", style=dotted];
+
+DFM__RenameInProgressDownloadFile -> DFM__CancelDownloadOnRename
+[label="if rename fails"];
+
+DFM__CancelDownloadOnRename -> DM__DownloadCancelled
+[style=dotted];
+
+DM__DownloadCancelled -> DM__DownloadCancelledInternal;
+
+// UI:
+DM__StartDownload
+[
+ fillcolor="yellowgreen",
+ label="DownloadManager::\nStartDownload"
+ ];
+
+DM__CheckDownloadUrlDone
+[
+ fillcolor="yellowgreen",
+ label="DownloadManager::\nCheckDownloadUrlDone"
+ ];
+
+DM__CheckVisitedReferrerBeforeDone
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nCheckVisitedReferrerBeforeDone"
+ ];
+
+DM__OnPathExistenceAvailable
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nOnPathExistenceAvailable"
+ ];
+
+DM__FileSelected
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nFileSelected"
+ ];
+
+DM__FileSelectionCanceled
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nFileSelectionCanceled"
+ ];
+
+DownloadSBClient__CheckDownloadUrl
+[
+ fillcolor=yellowgreen,
+ label="DownloadSBClient::\nCheckDownloadUrl"
+ ];
+
+DI__MarkUrlDangerous
+[
+ fillcolor=yellowgreen,
+ label="DownloadItem::\nMarkUrlDangerous"
+ ];
+
+DH__CheckVisitedReferrerBefore
+[
+ fillcolor=yellowgreen,
+ label="DownloadHistory::\nCheckVisitedReferrerBefore"
+ ];
+
+DownloadPrefs__IsDownloadPathManaged
+[
+ fillcolor=yellowgreen,
+ label="DownloadPrefs::\nIsDownloadPathManaged"
+ ];
+
+DM__IsDangerous
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nIsDangerous"
+ ];
+
+SelectFileDialog__SelectFile
+[
+ fillcolor=yellowgreen,
+ label="SelectFileDialog::\nSelectFile"
+ ];
+
+DM__ContinueDownloadWithPath
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nContinueDownloadWithPath"
+ ];
+
+DI__OnPathDetermined
+[
+ fillcolor=yellowgreen,
+ label="DownloadItem::\nOnPathDetermined"
+ ];
+
+DI__UpdateTarget
+[
+ fillcolor=yellowgreen,
+ label="DownloadItem::\nUpdateTarget"
+ ];
+
+DI__IsDangerous
+[
+ fillcolor=yellowgreen,
+ label="DownloadItem::\nIsDangerous"
+ ];
+
+DM__DownloadCancelledInternal
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nDownloadCancelledInternal"
+ ];
+
+DM__UpdateAppIcon
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nUpdateAppIcon"
+ ];
+
+DI__Rename
+[
+ fillcolor=yellowgreen,
+ label="DownloadItem::\nRename"
+ ];
+
+DM__OnCreateDownloadEntryComplete
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nOnCreateDownloadEntryComplete"
+ ];
+
+DM__DownloadCancelled
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nDownloadCancelled"
+];
+
+DM__ShouldOpenFileBasedOnExtension
+[
+ fillcolor=yellowgreen,
+ label="DownloadManager::\nShouldOpenFileBasedOnExtension"
+ ];
+
+SavePackage__ContinueSave
+[
+ fillcolor="yellowgreen",
+ label="SavePackage::\nContinueSave"
+ ];
+
+// FILE:
+DM__CheckIfSuggestedPathExists
+[
+ fillcolor=gold,
+ label="DownloadManager::\nCheckIfSuggestedPathExists"
+ ];
+
+DFM__RenameInProgressDownloadFile
+[
+ fillcolor=gold,
+ label="DownloadFileManager::\nRenameInProgressDownloadFile"
+ ];
+
+file_util__API
+[
+ fillcolor=gold,
+ label="file_util calls (CreateDirectory, PathIsWritable, PathExists)"
+ ];
+
+du__GetUniquePathNumberWithCrDownload
+[
+ fillcolor=gold,
+ label="download_util::\nGetUniquePathNumberWithCrDownload"
+ ];
+
+DFM__CancelDownloadOnRename
+[
+ fillcolor=gold,
+ label="DownloadFileManager::\nCancelDownloadOnRename"
+ ];
+
+net__GetPreferredExtensionForMimeType
+[
+ fillcolor=gold,
+ label="net::\nGetPreferredExtensionForMimeType"
+ ];
+
+// Other
+UserScript__IsURLUserScript
+[
+ label="UserScript::\nIsURLUserScript"
+ ];
+
+du__GenerateFileNameFromRequest
+[
+ label="download_util::\nGenerateFileNameFromRequest"
+ ];
+
+DH__AddEntry
+[
+ label="DownloadHistory::\nAddEntry"
+ ];
+
+du__GenerateFileNameInternal
+[
+ label="download_util::\nGenerateFileNameInternal"
+ ];
+
+net__GetSuggestedFilename
+[
+ label="net::\nGetSuggestedFilename"
+ ];
+
+du__GenerateSafeFileName
+[
+ label="download_util::\nGenerateSafeFileName"
+ ];
+
+du__GenerateExtension
+[
+ label="download_util::\nGenerateExtension"
+ ];
+
+bookmark_utils__GetNameForURL
+[
+ label="bookmark_utils::GetNameForURL"
+ ];
+
+}

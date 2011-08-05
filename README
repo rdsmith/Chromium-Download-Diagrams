@@ -11,15 +11,20 @@ ask what's going on if you don't believe you know what you're doing
    DownloadItem.  Hopefully to be used as a guide at some point for
    cleaning up those calls.
 
+-- RDH_objects.dot (asanka): Diagram of ResourceHandler chains used by
+   ResourceDispatcherHost.
+
 -- UI-interface-viewonly.dot (rdsmith): A class inheritance and
    reference diagram for the download UI system.  This covers the
    views (Windows) implementation only, as putting all three (or more)
    together gets messy.  There are minor differences between the
    systems, but Cocoa and GTK mostly follow this pattern.
 
--- downloads_flow.dot (rdsmith): Diagram of all of the downloads
-   interthread pathways south of DownloadResourceHandler.
-
 -- download-initiation.dot (rdsmith): Diagram of the different
    pathways through which a download may be initiated.  
 
+-- downloads_flow.dot (rdsmith): Diagram of all of the downloads
+   interthread pathways south of DownloadResourceHandler.
+
+-- filename-determination-control-flow.dot (asanka): Control flow used
+   for initial filename determination during a download.
