@@ -2,17 +2,19 @@ digraph initiation {
     node [shape=box,style=filled];
 
     node [fillcolor=powderblue];
-    DownloadResourceHandler [label="DownloadResourceHandler\n\n- Initializes from input values\l- download_id from DFM::GetNextId()\l- prompt... = save_as_ && null DownloadSaveInfo\l"];
-    RDH_BeginDownload [label="ResourceDispatcherHost::\nBeginDownload\n\n- Blocks if shutdown, renderer disallowed,\l  url unhandleable.\l- Creates URLReqeust, RDHRI, SBRH (opt),\l  DownloadResourceHandler"];
+    DownloadResourceHandler [shape=record,label="{ {url | rdh | rphAndViewId | request_id | prompt | DFM} | DownloadResourceHandler\n\n- Initializes from input values\l- download_id from DFM::GetNextId()\l- prompt = prompt && null DownloadSaveInfo\l}"];
+    RDH_BeginDownload [shape=record,label="{ {url | ref | save_info | prompt | rdh(this) | rphAndViewId | context} | ResourceDispatcherHost::\nBeginDownload\n\n- Blocks if shutdown, renderer disallowed,\l  url unhandleable.\l- Creates URLReqeust, RDHRI, SBRH (opt),\l  DownloadResourceHandler }"];
 
-    du_DownloadUrl [label="download_util::\nDownloadUrl\n\n- Gets URLRequestContext and sets charset\l"];
+    du_DownloadUrl [shape=record,label="{ {url | ref | ref_charset | tab_contents | save_info | rdh | rphAndViewId | context} | download_util::\nDownloadUrl\n\n- Gets URLRequestContext and sets charset\l}"];
 
     DownloadThrottlingResourceHandler [label="DownloadThrottlingesourceHandler\n"];
 
-    node[fillcolor=palegreen];
-    DM_DownloadUrlToFile [label="DownloadManager::\nDownloadUrlToFile\n\n- Get ids from tab_contents and\l  request_context_getter_ from self.\l"];
+    RMF_OnDownloadUrl [shape=record, label="{ { url | ref | message | name } | RenderMessageFilter::\nOnDownloadUrl}"];
 
-    DM_DownloadUrl [label="DownloadManager::\nDownloadUrl"];
+    node[fillcolor=palegreen];
+    DM_DownloadUrlToFile [shape=record, label="{ {url | ref | ref_charset | tab_contents | save_info} | DownloadManager::\nDownloadUrlToFile\n\n- Get ids from tab_contents and\l  request_context_getter_ from self.\l}"];
+
+    DM_DownloadUrl [shape=record, label="{ {url | ref | ref_charset | tab_contents} | DownloadManager::\nDownloadUrl}"];
 
     node [shape=ellipse];
     SaveStarAs [label="Save * As"];
@@ -20,13 +22,16 @@ digraph initiation {
     DragAndDrop [label="Drag and drop"];
     ImageBurn [label="Image Burn"];
     Navigation [fillcolor="powderblue", label="Navigation"];
+    Renderer [fillcolor="powderblue"];
 
     // Connections
     edge [color=black];
+    Renderer -> RMF_OnDownloadUrl;
+    RMF_OnDownloadUrl -> RDH_BeginDownload [label="prompt = false"];
     DM_DownloadUrl -> DM_DownloadUrlToFile [label="Null DownloadSaveInfo()"];
-    du_DownloadUrl -> RDH_BeginDownload [label="save_as = true"];
+    du_DownloadUrl -> RDH_BeginDownload [label="prompt = true"];
     RDH_BeginDownload -> DownloadResourceHandler;
-    DownloadThrottlingResourceHandler -> DownloadResourceHandler [label="Null DownloadSaveInfo()\nsave_as = false"];
+    DownloadThrottlingResourceHandler -> DownloadResourceHandler [label="Null DownloadSaveInfo()\nprompt = false"];
     SaveStarAs -> DM_DownloadUrl;
     DragAndDrop -> DM_DownloadUrlToFile;
     ImageBurn -> DM_DownloadUrlToFile;
@@ -35,6 +40,10 @@ digraph initiation {
 
     edge [color=red];
     DM_DownloadUrlToFile -> du_DownloadUrl;
+
+    node ArgumentExplanation [shape=box, fillcolor=white,label="Function Arguments\n\nurl:				URL to download\lref:				Referring URL\lref_charset:		??\ltab_contents:		TabContents requesting download.\lsave_info:		Name and possibly stream for output file\lrdh:				ResourceDispatcherHost\lrphAndViewId:	The Renderer host and view ID\lcontext:			ResourceContext\lprompt:			boolean indicating whether to prompt\lDFM:			DownloadFileManager\l"];
+
+    ArgumentExplanation -> Navigation [style=invis];
 
 };
 
