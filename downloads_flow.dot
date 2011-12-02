@@ -23,9 +23,9 @@ digraph Download_Startup {
     color=invis;
     node [label="RDH"];
     RDH_OnResponseStarted;
-    RDH_OnRequestRedirected;
     RDH_OnWillRead;
     RDH_OnReadCompleted;
+    RDH_OnRequestRedirected;
     RDH_OnResponseCompleted;
   };
   RDH_CancelRequest [label="ResourceDispatcherHost::\nCancelRequest"];
@@ -33,12 +33,20 @@ digraph Download_Startup {
   node [shape=box];
 
   node [fillcolor=powderblue];		// Other IO thread stuff.
-  DRH_OnResponseStarted [label="DownloadResourceHandler::\nOnResponseStarted\n--\n> Create DownloadCreateInfo\n> ResourceDispatcherHost::\nPauseRequest(true)"];
-  DRH_OnWillRead [style=filled, fillcolor=powderblue, label="DownloadResourceHandler::\nOnWillRead\n(Create buffer)"];
-  DRH_OnRequestRedirected [label="DownloadResourceHandler::\nOnRequestRedirected\n(Note url)"];
-  DRH_OnReadCompleted [label="DownloadResourceHandler::\nOnReadCompleted\n(move buffer to shared comm)"];
-  DRH_OnResponseCompleted [label="DownloadResourceHandler::\nOnResponseCompleted"];
+  subgraph cluster_drh {
+    label="DownloadResourceHandler";
+    rank=same;
+    DRH_OnResponseStarted [label="OnResponseStarted\n--\n> Create DownloadCreateInfo\n> ResourceDispatcherHost::\nPauseRequest(true)"];
+    DRH_OnReadCompleted [label="OnReadCompleted\n(move buffer to shared comm)"];
+    DRH_OnWillRead [label="OnWillRead\n(Create buffer)"];
+    DRH_OnRequestRedirected [label="OnRequestRedirected\n(Note url)"];
+    DRH_OnResponseCompleted [label="OnResponseCompleted"];
+  };
 
+  node [fillcolor=grey];	   // History/database thread
+  HistoryService [label="HistoryService"];
+  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload"];
+  
   RDH_PauseRequest [fillcolor=powderblue,style=filled, label="ResourceDispatcherHost::\nPauseRequest(false)",shape=octagon];
 
   node [fillcolor=palegreen];		// UI Thread
@@ -66,10 +74,6 @@ digraph Download_Startup {
 
   DM_CheckVisitedReferrerBeforeDone [label="DownloadManager::\nCheckVisitedReferrerBeforeDone\n>(dangerous?/suggest path)"];
 
-  node [fillcolor=grey];	   // History/database thread
-  HistoryService [label="HistoryService"];
-  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload"];
-  
   node [fillcolor=bisque];	// FILE Thread
   DFM_CreateDownloadFile [label="DownloadFileManager::\nCreateDownloadFile\n> Start In Progress timer if needed\l"];
   DFM_UpdateInProgressDownloads [label="[Timer based; input enables/disables]\n\nDownloadFileManager::\nUpdateInProgressDownloads"];
@@ -176,7 +180,6 @@ digraph Download_Startup {
   // Layout control
   edge [style=invis];
   DRH_OnWillRead -> HistoryService;
-  DRH_OnResponseStarted -> DRH_OnRequestRedirected -> DRH_OnWillRead -> DRH_OnReadCompleted -> DRH_OnResponseCompleted;
 
   subgraph cluster_cancel_pathway {
     color=invis;
