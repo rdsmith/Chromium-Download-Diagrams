@@ -50,11 +50,15 @@ digraph Download_Startup {
   RDH_PauseRequest [fillcolor=powderblue,style=filled, label="ResourceDispatcherHost::\nPauseRequest(false)",shape=octagon];
 
   node [fillcolor=palegreen];		// UI Thread
-  CDMD_ShouldStartDownload [label="ChromeDownloadManagerDelegate::\nShouldStartDownload\n> Safe Browsing Check"];
-  CDMD_CheckDownloadUrlDone [label="ChromeDownloadManagerDelegate::\nCheckDownloadUrlDone\n> Checks Visited Before Today"];
-  CDMD_CheckVisitedReferrerBeforeDone [label="ChromeDownloadManagerDelegate::\nCheckVisitedReferrerBeforeDone\n> (dangerous?/suggest_path)"];
-  CDMD_CheckIfSuggestedPathExists [label="ChromeDownloadManagerDelegate::\nCheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
-  CDMD_OnPathExistenceAvailable [label="ChromeDownloadManagerDelegate::\nOnPathExistenceAvailable\n> Set file check results\l"];
+  subgraph cluster_cdmd {
+    label="ChromeDownloadManagerDelegate";
+    CDMD_ShouldStartDownload [label="ShouldStartDownload\n> Safe Browsing Check"];
+    CDMD_CheckDownloadUrlDone [label="CheckDownloadUrlDone\n> Checks Visited Before Today"];
+    CDMD_CheckVisitedReferrerBeforeDone [label="CheckVisitedReferrerBeforeDone\n> (dangerous?/suggest_path)"];
+    CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
+    CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n> Set file check results\l"];
+  };
+  CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l"];
 
   DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> Attach DownloadItem\l"];
   DM_OnQueryDownloadEntriesComplete [label="DownloadManager\nOnQueryDownloadEntriesComplete\n> history -> history_downloads_\l"];
@@ -128,6 +132,8 @@ digraph Download_Startup {
   DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload [color=black,samehead="join"];
   DM_OnCreateDownloadEntryComplete -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
   DFM_CreateDownloadFile -> RDH_PauseRequest;
+  DM_MaybeCompleteDownload -> CDMD_ShouldCompleteDownload [color=black];
+  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload [color=black, label="(May be indirect)"];
 
   // 	Completion path
   DRH_OnResponseCompleted -> DFM_OnResponseCompleted;
