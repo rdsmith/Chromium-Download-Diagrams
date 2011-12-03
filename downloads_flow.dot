@@ -57,10 +57,11 @@ digraph Download_Startup {
     CDMD_CheckVisitedReferrerBeforeDone [label="CheckVisitedReferrerBeforeDone\n> (dangerous?/suggest_path)"];
     CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
     CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n> Set file check results\l"];
+    CDMD_OverrideIntermediateFile [label="OverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l"];
   };
-  CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l"];
+  CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l",peripheries=2];
 
-  DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> Attach DownloadItem\l"];
+  DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> DownloadItem::OnPathDetermined\l"];
   DM_OnQueryDownloadEntriesComplete [label="DownloadManager\nOnQueryDownloadEntriesComplete\n> history -> history_downloads_\l"];
   DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l"];
   DM_UpdateDownload [label="DownloadManager::\nUpdateDownload\n> Update UI displays\l> Update History Item\l> Update App Icon\l"];
@@ -116,9 +117,11 @@ digraph Download_Startup {
   DFM_StartDownload -> DFM_CreateDownloadFile;
   DFM_CreateDownloadFile -> DM_StartDownload;
   DM_StartDownload -> CDMD_ShouldStartDownload;
-  DM_StartDownload -> DM_RestartDownload [style=dashed];
+  DM_StartDownload -> DM_RestartDownload [style=dashed,color=black];
   DM_RestartDownload -> DFM_RenameInProgressDownloadFile;
   DM_RestartDownload -> HistoryBackend_CreateDownload;
+  DM_RestartDownload -> CDMD_OverrideIntermediateFile [color=black];
+  CDMD_OnPathExistenceAvailable -> CDMD_OverrideIntermediateFile [style=invis];
 
   CDMD_ShouldStartDownload -> CDMD_CheckDownloadUrlDone [label="(Indirectly)"style=dashed];
 
