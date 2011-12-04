@@ -66,13 +66,13 @@ digraph Download_Startup {
   DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l", group="initpath"];
   DM_UpdateDownload [label="DownloadManager::\nUpdateDownload\n> Update UI displays\l> Update History Item\l> Update App Icon\l"];
   DM_StartDownload [label="DownloadManager::\nStartDownload\n"];
-  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName\n> Check and set uniquifier\l> Update history with name\l"];
+  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName\n> Check and set uniquifier\l> Update history with name\l",group="completepath"];
   DM_DownloadCancelled [label="DownloadManager::\nDownloadCancelled\n>Update History\l"];
-  DI_OnDownloadRenamedToFinalName [label="DownloadItem::\nOnDownloadRenamedToFinalName"];
+  DI_OnDownloadRenamedToFinalName [label="DownloadItem::\nOnDownloadRenamedToFinalName",group="completepath",group="completepath"];
   DM_MaybeCompleteDownload [label="[ThreadJoin]\nDownloadManager::\nMaybeCompleteDownload\n> Remove from Queues\l> Update item and history state\l"];
   DI_OnDownloadCompleting [label="DownloadItem::\nOnDownloadCompleting"];
   User_Cancel [label="User Cancel or Remove"];
-  DI_Completed [label="DownloadItem::\nCompleted\n\n> Open if extenion install or auto-open\l> Mark as auto-opened if temporary\l> Update observers\l> If name finalized, notify observers.\l"];
+  DI_Completed [label="DownloadItem::\nCompleted\n\n> Open if extenion install or auto-open\l> Mark as auto-opened if temporary\l> Update observers\l> If name finalized, notify observers.\l",group="completepath"];
   DM_OnCreateDownloadEntryComplete [label="DownloadManager\nOnCreateDownloadEntryComplete\n> download -> history_downloads_\l> ShowDownloadInBrowser\l> NotifyObservers\l",group="init_path"];
   DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated\n>> Set safety state\l> Update Observers\l",group="init_path"];
   DM_OnAllDataSaved [label="DownloadManager::\nOnAllDataSaved\n> DownloadItem::OnAllDataSaved\l>> Set all_data_saved_\l"];
