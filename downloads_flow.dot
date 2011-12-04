@@ -58,7 +58,7 @@ digraph Download_Startup {
     CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
     CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n> Set file check results\l"];
   };
-  CDMD_OverrideIntermediateFile [label="ChromeDownloadManagerDelegate::\nOverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l"];
+  CDMD_OverrideIntermediateFile [label="ChromeDownloadManagerDelegate::\nOverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l",peripheries=2];
   CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l",peripheries=2];
 
   DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> DownloadItem::OnPathDetermined\l"];
