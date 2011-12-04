@@ -45,7 +45,7 @@ digraph Download_Startup {
 
   node [fillcolor=grey];	   // History/database thread
   HistoryService [label="HistoryService"];
-  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload"];
+  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload",group="init_path"];
   
   RDH_PauseRequest [fillcolor=powderblue,style=filled, label="ResourceDispatcherHost::\nPauseRequest(false)",shape=octagon];
 
@@ -57,13 +57,13 @@ digraph Download_Startup {
     CDMD_CheckVisitedReferrerBeforeDone [label="CheckVisitedReferrerBeforeDone\n> (dangerous?/suggest_path)"];
     CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
     CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n> Set file check results\l"];
-    CDMD_OverrideIntermediateFile [label="OverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l"];
   };
+  CDMD_OverrideIntermediateFile [label="ChromeDownloadManagerDelegate::\nOverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l"];
   CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l",peripheries=2];
 
   DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> DownloadItem::OnPathDetermined\l"];
   DM_OnQueryDownloadEntriesComplete [label="DownloadManager\nOnQueryDownloadEntriesComplete\n> history -> history_downloads_\l"];
-  DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l"];
+  DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l", group="initpath"];
   DM_UpdateDownload [label="DownloadManager::\nUpdateDownload\n> Update UI displays\l> Update History Item\l> Update App Icon\l"];
   DM_StartDownload [label="DownloadManager::\nStartDownload\n"];
   DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName\n> Check and set uniquifier\l> Update history with name\l"];
@@ -73,17 +73,17 @@ digraph Download_Startup {
   DI_OnDownloadCompleting [label="DownloadItem::\nOnDownloadCompleting"];
   User_Cancel [label="User Cancel or Remove"];
   DI_Completed [label="DownloadItem::\nCompleted\n\n> Open if extenion install or auto-open\l> Mark as auto-opened if temporary\l> Update observers\l> If name finalized, notify observers.\l"];
-  DM_OnCreateDownloadEntryComplete [label="DownloadManager\nOnCreateDownloadEntryComplete\n> download -> history_downloads_\l> ShowDownloadInBrowser\l> NotifyObservers\l"];
-  DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated\n>> Set safety state\l> Update Observers\l"];
+  DM_OnCreateDownloadEntryComplete [label="DownloadManager\nOnCreateDownloadEntryComplete\n> download -> history_downloads_\l> ShowDownloadInBrowser\l> NotifyObservers\l",group="init_path"];
+  DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated\n>> Set safety state\l> Update Observers\l",group="init_path"];
   DM_OnAllDataSaved [label="DownloadManager::\nOnAllDataSaved\n> DownloadItem::OnAllDataSaved\l>> Set all_data_saved_\l"];
-  DangerousConfirmationDialog [label="Dangerous Confirmation Dialog"];
+  DangerousConfirmationDialog [label="Dangerous Confirmation Dialog",group="init_path"];
   DM_OnResponseCompleted [label="DownloadManager::\nOnResponseCompleted"];
   DM_OnDownloadError [label="DownloadManager::\nOnDownloadError\n> Remove from history\l"];
   DI_Interrupted [label="DownloadItem::Interrupted\n> Update item\l> Notify Observers\l"];
 
 
   node [fillcolor=bisque];	// FILE Thread
-  DFM_CreateDownloadFile [label="DownloadFileManager::\nCreateDownloadFile\n> Start In Progress timer if needed\l"];
+  DFM_CreateDownloadFile [label="DownloadFileManager::\nCreateDownloadFile\n> Start In Progress timer if needed\l",group="initpath"];
   DFM_UpdateInProgressDownloads [label="[Timer based; input enables/disables]\n\nDownloadFileManager::\nUpdateInProgressDownloads"];
   DFM_UpdateDownload [label="DownloadFileManager::\nUpdateDownload\n(write data to file)"];
   DFM_OnResponseCompleted [label="DownloadFileManager::\nOnResponseCompleted\n> cleanup\l> Stop In Progress timer\l  if no downloads active\l"];
@@ -132,11 +132,12 @@ digraph Download_Startup {
 
 
   HistoryBackend_CreateDownload -> DM_OnCreateDownloadEntryComplete;
-  DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload [color=black,samehead="join"];
+  DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload [color=black,samehead="join",group="init_path"];
   DM_OnCreateDownloadEntryComplete -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
+  CDMD_ShouldCompleteDownload -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
   DFM_CreateDownloadFile -> RDH_PauseRequest;
-  DM_MaybeCompleteDownload -> CDMD_ShouldCompleteDownload [color=black];
-  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload [color=black, label="(May be indirect)"];
+  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload  [color=black,dir=back];
+  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload [color=black, style=dashed, label="(May not happen\n or be indirect)"];
 
   // 	Completion path
   DRH_OnResponseCompleted -> DFM_OnResponseCompleted;
