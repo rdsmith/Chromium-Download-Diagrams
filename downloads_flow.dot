@@ -17,6 +17,9 @@ digraph Download_Startup {
   //		* DI: DownloadItem
   //		* du: download_util::
 
+  // 		***Nodes and Subgraphs***
+
+  // Resource Dispatcher Host triggers (unlabeled)
   node [shape=octagon,fillcolor=powderblue];
   subgraph cluster_RDHTriggers {
     rank=same;
@@ -29,155 +32,296 @@ digraph Download_Startup {
     RDH_OnResponseCompleted;
   };
   RDH_CancelRequest [label="ResourceDispatcherHost::\nCancelRequest"];
+  RDH_PauseRequest [fillcolor=powderblue,style=filled,
+                    label="ResourceDispatcherHost::\n" +
+		          "PauseRequest(false)",shape=octagon];
 
-  node [shape=box];
+  node [shape=box]; // Only RDH are octagonal.
 
-  node [fillcolor=powderblue];		// Other IO thread stuff.
-  subgraph cluster_drh {
+  // Download Resource Handler
+  node [fillcolor=powderblue]; 
+  subgraph cluster_drh {	  	
     label="DownloadResourceHandler";
     rank=same;
-    DRH_OnResponseStarted [label="OnResponseStarted\n--\n> Create DownloadCreateInfo\n> ResourceDispatcherHost::\nPauseRequest(true)"];
-    DRH_OnReadCompleted [label="OnReadCompleted\n(move buffer to shared comm)"];
-    DRH_OnWillRead [label="OnWillRead\n(Create buffer)"];
-    DRH_OnRequestRedirected [label="OnRequestRedirected\n(Note url)"];
+    DRH_OnResponseStarted [label="OnResponseStarted\n--\n" +
+                                 "> Create DownloadCreateInfo\l" +
+				 "> ResourceDispatcherHost::\l" +
+				 "> PauseRequest(true)\l"];
+    DRH_OnReadCompleted [label="OnReadCompleted\n" +
+			       "(move buffer to shared comm)"];
+    DRH_OnWillRead [label="OnWillRead\n" +
+			   "(Create buffer)"];
+    DRH_OnRequestRedirected [label="OnRequestRedirected\n" +
+				   "(Note url)"];
     DRH_OnResponseCompleted [label="OnResponseCompleted"];
   };
 
+  // Not completely clear what this does, but it appears to center the
+  // DRH routines and spread them out.
+  subgraph {
+    rank=same;
+    DRH_OnResponseStarted;
+    DRH_OnWillRead;
+    DRH_OnReadCompleted;
+    DRH_OnRequestRedirected;
+    DRH_OnResponseCompleted;
+  };
+
+  // History services.  
   node [fillcolor=grey];	   // History/database thread
   HistoryService [label="HistoryService"];
-  HistoryBackend_CreateDownload [fillcolor=grey,label="HistoryBackend::\nCreateDownload",group="init_path"];
+  HistoryBackend_CreateDownload [fillcolor=grey,
+				 label="HistoryBackend::\n" +
+				       "CreateDownload",group="init_path"];
   
-  RDH_PauseRequest [fillcolor=powderblue,style=filled, label="ResourceDispatcherHost::\nPauseRequest(false)",shape=octagon];
-
+  // Chrome Download Manager Delegate.
   node [fillcolor=palegreen];		// UI Thread
   subgraph cluster_cdmd {
     label="ChromeDownloadManagerDelegate";
-    CDMD_ShouldStartDownload [label="ShouldStartDownload\n> Safe Browsing Check"];
-    CDMD_CheckDownloadUrlDone [label="CheckDownloadUrlDone\n> Checks Visited Before Today"];
-    CDMD_CheckVisitedReferrerBeforeDone [label="CheckVisitedReferrerBeforeDone\n> (dangerous?/suggest_path)"];
-    CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n(create empty file)",fillcolor=bisque];
-    CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n> Set file check results\l"];
+    CDMD_ShouldStartDownload [label="ShouldStartDownload\n" +
+                                    "> Safe Browsing Check"];
+    CDMD_CheckDownloadUrlDone [label="CheckDownloadUrlDone\n" +
+				     "> Checks Visited Before Today"];
+    CDMD_CheckVisitedReferrerBeforeDone
+        [label="CheckVisitedReferrerBeforeDone\n" +
+ 	       "> (dangerous?/suggest_path)"];
+    CDMD_CheckIfSuggestedPathExists [label="CheckIfSuggestedPathExists\n" +
+				           "(create empty file)",
+				     fillcolor=bisque];
+    CDMD_OnPathExistenceAvailable [label="OnPathExistenceAvailable\n" +
+				         "> Set file check results\l"];
   };
-  CDMD_OverrideIntermediateFile [label="ChromeDownloadManagerDelegate::\nOverrideIntermediateFile\n> Set intermediate file\l   for non-dangerous downloads\l",peripheries=2];
-  CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\nShouldCompleteDownload\n> Gates download completion\l> Safe browsing content check\l",peripheries=2];
+  CDMD_OverrideIntermediateFile [label="ChromeDownloadManagerDelegate::\n" +
+				       "OverrideIntermediateFile\n" +
+				        "> Set intermediate file\l
+					"  for non-dangerous downloads\l",
+				 peripheries=2];
+  CDMD_ShouldCompleteDownload [label="ChromeDownloadManagerDelegate::\n" +
+				     "ShouldCompleteDownload\n" +
+				      "> Gates download completion\l>" +
+				      " Safe browsing content check\l",
+			       peripheries=2];
 
-  DM_RestartDownload [label="DownloadManager::\nRestartDownload\n> May prompt for file\l> DownloadItem::OnPathDetermined\l"];
-  DM_OnQueryDownloadEntriesComplete [label="DownloadManager\nOnQueryDownloadEntriesComplete\n> history -> history_downloads_\l"];
-  DFM_StartDownload [label="DownloadFileManager::\nStartDownload\n> DownloadManager::CreateDownloadItem\l", group="initpath"];
-  DM_UpdateDownload [label="DownloadManager::\nUpdateDownload\n> Update UI displays\l> Update History Item\l> Update App Icon\l"];
-  DM_StartDownload [label="DownloadManager::\nStartDownload\n"];
-  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\nOnDownloadRenamedToFinalName\n> Check and set uniquifier\l> Update history with name\l",group="completepath"];
-  DM_DownloadCancelled [label="DownloadManager::\nDownloadCancelled\n>Update History\l"];
-  DI_OnDownloadRenamedToFinalName [label="DownloadItem::\nOnDownloadRenamedToFinalName",group="completepath",group="completepath"];
-  DM_MaybeCompleteDownload [label="[ThreadJoin]\nDownloadManager::\nMaybeCompleteDownload\n> Remove from Queues\l> Update item and history state\l"];
-  DI_OnDownloadCompleting [label="DownloadItem::\nOnDownloadCompleting"];
+  // Download Manager.  
+  node [fillcolor=palegreen];		// UI Thread
+  DM_RestartDownload [label="DownloadManager::\n" +
+			    "RestartDownload\n" +
+			    "> May prompt for file\l>" +
+			    " DownloadItem::OnPathDetermined\l"];
+  DM_OnQueryDownloadEntriesComplete [label="DownloadManager\n" +
+				           "OnQueryDownloadEntriesComplete\n" +
+				           "> history -> history_downloads_\l"];
+  DM_UpdateDownload [label="DownloadManager::\n" +
+			   "UpdateDownload\n" +
+			   "> Update UI displays\l"" +
+			   "> Update History Item\l" +
+			   "> Update App Icon\l"];
+  DM_StartDownload [label="DownloadManager::\n" +
+			  "StartDownload\n"];
+  DM_OnDownloadRenamedToFinalName [label="DownloadManager::\n" +
+				         "OnDownloadRenamedToFinalName\n" +
+				         "> Check and set uniquifier\l" +
+					 "> Update history with name\l",
+			           group="completepath"];
+  DM_DownloadCancelled [label="DownloadManager::\n" +
+			      "DownloadCancelled\n" +
+			      ">Update History\l"];
+  DM_MaybeCompleteDownload [label="[ThreadJoin]\n" +
+				  "DownloadManager::\n" +
+				  "MaybeCompleteDownload\n" +
+				  "> Remove from Queues\l" +
+				  "> Update item and history state\l"];
   User_Cancel [label="User Cancel or Remove"];
-  DI_Completed [label="DownloadItem::\nCompleted\n\n> Open if extenion install or auto-open\l> Mark as auto-opened if temporary\l> Update observers\l> If name finalized, notify observers.\l",group="completepath"];
-  DM_OnCreateDownloadEntryComplete [label="DownloadManager\nOnCreateDownloadEntryComplete\n> download -> history_downloads_\l> ShowDownloadInBrowser\l> NotifyObservers\l",group="init_path"];
-  DM_DangerousDownloadValidated [label="DownloadManager::\nDangerousDownloadValidated\n>> Set safety state\l> Update Observers\l",group="init_path"];
-  DM_OnAllDataSaved [label="DownloadManager::\nOnAllDataSaved\n> DownloadItem::OnAllDataSaved\l>> Set all_data_saved_\l"];
-  DangerousConfirmationDialog [label="Dangerous Confirmation Dialog",group="init_path"];
-  DM_OnResponseCompleted [label="DownloadManager::\nOnResponseCompleted"];
-  DM_OnDownloadError [label="DownloadManager::\nOnDownloadError\n> Remove from history\l"];
-  DI_Interrupted [label="DownloadItem::Interrupted\n> Update item\l> Notify Observers\l"];
+  DM_OnCreateDownloadEntryComplete [label="DownloadManager\n" +
+					  "OnCreateDownloadEntryComplete\n" +
+					  "> download -> history_downloads_\l"+
+					  "> ShowDownloadInBrowser\l"+
+					  "> NotifyObservers\l",
+				    group="init_path"];
+  DM_DangerousDownloadValidated [label="DownloadManager::\n" +
+				       "DangerousDownloadValidated\n" +
+				       ">> Set safety state\l"+
+				       "> Update Observers\l",
+				 group="init_path"];
+  DM_OnAllDataSaved [label="DownloadManager::\n" +
+			   "OnAllDataSaved\n" +
+			    "> DownloadItem::OnAllDataSaved\l"+
+			    ">> Set all_data_saved_\l"];
+  DangerousConfirmationDialog [label="Dangerous Confirmation Dialog",
+  			       group="init_path"];
+  DM_OnResponseCompleted [label="DownloadManager::\n" +
+				"OnResponseCompleted"];
+  DM_OnDownloadError [label="DownloadManager::\n" +
+  		            "OnDownloadError\n" +
+ 			    "> Remove from history\l"];
 
+  // Download Item
+  node [fillcolor=palegreen];		// UI Thread
+  DI_OnDownloadRenamedToFinalName [label="DownloadItem::\n" +
+				         "OnDownloadRenamedToFinalName",
+				   group="completepath",group="completepath"];
+  DI_OnDownloadCompleting [label="DownloadItem::\n" +
+				 "OnDownloadCompleting"];
+  DI_Completed [label="DownloadItem::\n" +
+  	              "Completed\n" +
+ 		      "\n" +
+ 		      "> Open if extenion install or auto-open\l"+
+		      "> Mark as auto-opened if temporary\l"+
+		      "> Update observers\l"+
+		      "> If name finalized, notify observers.\l",
+		group="completepath"];
+  DI_Interrupted [label="DownloadItem::Interrupted\n" +
+  		        "> Update item\l"+
+			"> Notify Observers\l"];
 
-  node [fillcolor=bisque];	// FILE Thread
-  DFM_CreateDownloadFile [label="DownloadFileManager::\nCreateDownloadFile\n> Start In Progress timer if needed\l",group="initpath"];
-  DFM_UpdateInProgressDownloads [label="[Timer based; input enables/disables]\n\nDownloadFileManager::\nUpdateInProgressDownloads"];
-  DFM_UpdateDownload [label="DownloadFileManager::\nUpdateDownload\n(write data to file)"];
-  DFM_OnResponseCompleted [label="DownloadFileManager::\nOnResponseCompleted\n> cleanup\l> Stop In Progress timer\l  if no downloads active\l"];
-  DFM_CancelDownload [label="DownloadFileManager::\nCancelDownload\n> Remove from list\l> Delete if name active\l"];
-  OpenItem [label="platform_util::\nOpenItem"];
-  DFM_RenameInProgressDownloadFile [label="DownloadFileManager::\nRenameInProgressDownloadFile\n> Rename\l"];
-  DFM_RenameCompletingDownloadFile [label="DownloadFileManager::\nRenameCompletingDownloadFile\n> Uniquify (if final & dangerous)\l> Rename\l> Annoatate (if MacOSX)\l"];
-  DFM_CancelDownloadOnRename [label="DownloadFileManager::\nCancelDownloadOnRename\n"];
-  DFM_CompleteDownload [label="DownloadFileManager::\nCompleteDownload\n> Detach download file\l"];
+  // Download File Manager
+  node [fillcolor=bisque];		// FILE thread
+  DFM_StartDownload [label="DownloadFileManager::\n" +
+			   "StartDownload\n" +
+ 			   "> DownloadManager::CreateDownloadItem\l",
+		     group="initpath",fillcolor=palegreen];
+  DFM_CreateDownloadFile [label="DownloadFileManager::\n" +
+				"CreateDownloadFile\n" +
+				"> Start In Progress timer if needed\l",
+			  group="initpath"];
+  DFM_UpdateInProgressDownloads
+      [label="[Timer based; input enables/disables]\n" +
+             "\n" +
+ 	     "DownloadFileManager::\n" +
+ 	     "UpdateInProgressDownloads"];
+  DFM_UpdateDownload [label="DownloadFileManager::\n" +
+  		            "UpdateDownload\n" +
+ 			    "(write data to file)"];
+  DFM_OnResponseCompleted [label="DownloadFileManager::\n" +
+				 "OnResponseCompleted\n" +
+				 "> cleanup\l"+
+				 "> Stop In Progress timer\l"+
+				 "  if no downloads active\l"];
+  DFM_CancelDownload [label="DownloadFileManager::\n" +
+			    "CancelDownload\n" +
+ 			    "> Remove from list\l"+
+			    "> Delete if name active\l"];
+  OpenItem [label="platform_util::\n" +
+  	          "OpenItem"];
+  DFM_RenameInProgressDownloadFile [label="DownloadFileManager::\n" +
+				          "RenameInProgressDownloadFile\n" +
+					  "> Rename\l"];
+  DFM_RenameCompletingDownloadFile
+      [label="DownloadFileManager::\n" +
+             "RenameCompletingDownloadFile\n" +
+ 	     "> Uniquify (if final & dangerous)\l"+
+ 	     "> Rename\l> Annoatate (if MacOSX)\l"];
+  DFM_CancelDownloadOnRename [label="DownloadFileManager::\n" +
+				    "CancelDownloadOnRename\n"];
+  DFM_CompleteDownload [label="DownloadFileManager::\n" +
+			      "CompleteDownload\n" +
+ 			      "> Detach download file\l"];
 
+  // Download Request Handle
   node [fillcolor=white];
-  DRH_CancelRequest [label="DownloadRequestHandle::\nCancelRequest"];
+  DRH_CancelRequest [label="DownloadRequestHandle::\n" +
+			   "CancelRequest"];
 
-  // Relationships
+  // 	***Relationships***
 
-  // Function calls
-  edge [color=black];
-
-  // 	ResourceDispatcherHost to DownloadResourceHandler
-  RDH_OnResponseStarted -> DRH_OnResponseStarted [label="(Indirectly)",style=dashed];
+  // ResourceDispatcherHost to DownloadResourceHandler
+  edge [color=black];	    // Funciton calls.
+  RDH_OnResponseStarted -> DRH_OnResponseStarted
+      [label="(Indirectly)",style=dashed];
   RDH_OnRequestRedirected -> DRH_OnRequestRedirected;
   RDH_OnWillRead -> DRH_OnWillRead;
   RDH_OnReadCompleted -> DRH_OnReadCompleted;
   RDH_OnResponseCompleted -> DRH_OnResponseCompleted;
 
-  // Different thread pathways.
-  edge [color=red];   // Will have some function calls.
-
-  // 	Initialilization path
+  // Initialilization path
+  edge [color=red];   // Thread post tasks.
   DRH_OnResponseStarted -> DFM_StartDownload;
   DFM_StartDownload -> DFM_CreateDownloadFile;
   DFM_CreateDownloadFile -> DM_StartDownload;
+  DFM_CreateDownloadFile -> RDH_PauseRequest;
   DM_StartDownload -> CDMD_ShouldStartDownload;
   DM_StartDownload -> DM_RestartDownload [style=dashed,color=black];
   DM_RestartDownload -> DFM_RenameInProgressDownloadFile;
   DM_RestartDownload -> HistoryBackend_CreateDownload;
   DM_RestartDownload -> CDMD_OverrideIntermediateFile [color=black];
-  CDMD_OnPathExistenceAvailable -> CDMD_OverrideIntermediateFile [style=invis];
 
-  CDMD_ShouldStartDownload -> CDMD_CheckDownloadUrlDone [label="(Indirectly)"style=dashed];
-
-  CDMD_CheckDownloadUrlDone -> CDMD_CheckVisitedReferrerBeforeDone [style=dashed, label="(Indirectly)"];
+  CDMD_ShouldStartDownload -> CDMD_CheckDownloadUrlDone
+      [label="(Indirectly)"style=dashed];
+  CDMD_CheckDownloadUrlDone -> CDMD_CheckVisitedReferrerBeforeDone
+      [style=dashed, label="(Indirectly)"];
   CDMD_CheckVisitedReferrerBeforeDone -> CDMD_CheckIfSuggestedPathExists;
   CDMD_CheckIfSuggestedPathExists -> CDMD_OnPathExistenceAvailable;
   CDMD_OnPathExistenceAvailable -> DM_RestartDownload [color=black];
 
-
+  // History backend and dangerous setup.
   HistoryBackend_CreateDownload -> DM_OnCreateDownloadEntryComplete;
-  DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload [color=black,samehead="join",group="init_path"];
-  DM_OnCreateDownloadEntryComplete -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
-  CDMD_ShouldCompleteDownload -> DangerousConfirmationDialog [style=dashed, label="dangerous\n(sets up dialog)"];
-  DFM_CreateDownloadFile -> RDH_PauseRequest;
-  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload  [color=black,dir=back];
-  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload [color=black, style=dashed, label="(May not happen\n or be indirect)"];
+  DM_OnCreateDownloadEntryComplete -> DM_MaybeCompleteDownload
+      [color=black,samehead="join"];
+  DM_OnCreateDownloadEntryComplete -> DangerousConfirmationDialog
+      [style=dashed, label="dangerous\n" +
+			   "(sets up dialog)"];
+  CDMD_ShouldCompleteDownload -> DangerousConfirmationDialog
+      [style=dashed, label="dangerous\n" +
+      		           "(sets up dialog)"];
+  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload
+      [color=black,dir=back];
+  CDMD_ShouldCompleteDownload -> DM_MaybeCompleteDownload
+      [color=black, style=dashed, label="(May not happen\n" +
+				        " or be indirect)"];
+  DangerousConfirmationDialog -> DM_DangerousDownloadValidated
+      [label="Validated",color=black];
+  DM_DangerousDownloadValidated -> DM_MaybeCompleteDownload
+      [color=black,samehead="join"];
 
-  // 	Completion path
+  // Data response completed path.
   DRH_OnResponseCompleted -> DFM_OnResponseCompleted;
-  DFM_OnResponseCompleted -> DM_OnResponseCompleted [label="download_manager exists"];
+  DFM_OnResponseCompleted -> DM_OnResponseCompleted
+      [label="download_manager exists"];
   DM_OnResponseCompleted -> DM_OnAllDataSaved [color=black];
   DM_OnAllDataSaved -> DM_MaybeCompleteDownload [color=black,samehead="join"];
 
-
-  //	Read path
+  // Read path
   DRH_OnReadCompleted -> DFM_UpdateDownload [label="shared comm empty"];
   
-  //	Safe download completion path
+  // Download completion path
   DM_MaybeCompleteDownload -> DI_OnDownloadCompleting [color=black];
   DI_OnDownloadCompleting -> DI_Completed [label="!needs rename",color=black];
-  DI_OnDownloadCompleting -> DFM_CompleteDownload [label="!needs rename",color=red];
-  DI_OnDownloadCompleting -> DFM_RenameCompletingDownloadFile [label="needs rename"];
+  DI_OnDownloadCompleting -> DFM_CompleteDownload
+      [label="!needs rename",color=red];
+  DI_OnDownloadCompleting -> DFM_RenameCompletingDownloadFile
+      [label="needs rename"];
   DFM_RenameCompletingDownloadFile -> DM_OnDownloadRenamedToFinalName;
   DM_OnDownloadRenamedToFinalName -> DFM_CompleteDownload [color=red];
-  DM_OnDownloadRenamedToFinalName -> DI_OnDownloadRenamedToFinalName [color=black];
-  DI_OnDownloadRenamedToFinalName -> DI_Completed [color=black,label="needed rename && SAFE"];
-  DI_Completed -> OpenItem [label="Download auto opens\n and not Mac"];
+  DM_OnDownloadRenamedToFinalName -> DI_OnDownloadRenamedToFinalName
+      [color=black];
+  DI_OnDownloadRenamedToFinalName -> DI_Completed
+      [color=black,label="needed rename && SAFE"];
+  DI_Completed -> OpenItem [label="Download auto opens\n" +
+				  " and not Mac"];
 
-  // 	Dangerous download completion path
-  DangerousConfirmationDialog -> DM_DangerousDownloadValidated [label="Validated",color=black];
-  DM_DangerousDownloadValidated -> DM_MaybeCompleteDownload [color=black,samehead="join"];
-
-  // 	History Initialization
+  // History Initialization
   HistoryService -> DM_OnQueryDownloadEntriesComplete [label="History loaded"];
 
   // 	Error pathways
   edge [style=dotted];
-  DFM_StartDownload -> DRH_CancelRequest [label="no download\nmanager",color=black];
-  DFM_CreateDownloadFile -> DRH_CancelRequest [label="file init\fails",color=black];
+  DFM_StartDownload -> DRH_CancelRequest
+      [label="no download\n" +
+             "manager",color=black];
+  DFM_CreateDownloadFile -> DRH_CancelRequest
+      [label="file init\fails",color=black];
   User_Cancel -> DM_DownloadCancelled [color=black];
-  DangerousConfirmationDialog -> DM_DownloadCancelled [label="Canceled",color=black];
-  DFM_RenameInProgressDownloadFile -> DFM_CancelDownloadOnRename [color=black, label="Rename failed"];
+  DangerousConfirmationDialog -> DM_DownloadCancelled
+      [label="Canceled",color=black];
+  DFM_RenameInProgressDownloadFile -> DFM_CancelDownloadOnRename
+      [color=black, label="Rename failed"];
   DFM_CancelDownloadOnRename -> DM_DownloadCancelled [color=red];
-  DFM_CancelDownloadOnRename -> DRH_CancelRequest [label="No Download\nManager",color=black];
-  DFM_RenameCompletingDownloadFile -> DFM_CancelDownloadOnRename [color=black,label="Rename failed"];
-  DFM_OnResponseCompleted -> DFM_CancelDownload [color=black,weight=0,label="No download manager"];
+  DFM_CancelDownloadOnRename -> DRH_CancelRequest
+      [label="No Download\n" +
+             "Manager",color=black];
+  DFM_RenameCompletingDownloadFile -> DFM_CancelDownloadOnRename
+      [color=black,label="Rename failed"];
+  DFM_OnResponseCompleted -> DFM_CancelDownload
+      [color=black,weight=0,label="No download manager"];
   DRH_CancelRequest -> RDH_CancelRequest;
   DM_OnResponseCompleted -> DM_OnDownloadError [color=black];
 
@@ -192,11 +336,12 @@ digraph Download_Startup {
   DFM_CreateDownloadFile -> DFM_UpdateInProgressDownloads;
   DFM_OnResponseCompleted -> DFM_UpdateInProgressDownloads;
   DFM_CancelDownload -> DFM_UpdateInProgressDownloads;
-  DFM_UpdateInProgressDownloads -> DM_UpdateDownload [label="For Each Download",style=solid];
+  DFM_UpdateInProgressDownloads -> DM_UpdateDownload
+      [label="For Each Download",style=solid];
 
   // Layout control
   edge [style=invis];
-  DRH_OnWillRead -> HistoryService;
+  DRH_OnRequestRedirected -> HistoryService;
 
   subgraph cluster_cancel_pathway {
     color=invis;
@@ -205,15 +350,6 @@ digraph Download_Startup {
     DM_DownloadCancelled;
     User_Cancel;
     DFM_UpdateInProgressDownloads;
-  };
-
-  subgraph drh {
-    rank=same;
-    DRH_OnResponseStarted;
-    DRH_OnResponseCompleted;
-    DRH_OnRequestRedirected;
-    DRH_OnWillRead;
-    DRH_OnReadCompleted;
   };
 
   subgraph cluster_legend {
@@ -233,7 +369,8 @@ digraph Download_Startup {
     blank1 -> blank2 [color=red,label="Async Message"];
     blank2->blank5 [color=invis];
     blank4->blank7 [color=invis];
-    blank5->blank6 [color=red,style=dotted,label="Error path"];
+    blank5->blank6 [color=red,style=dotted,label="Uncommon/error\n" +
+				"path"];
     blank7->blank8 [color=red,style=dashed,label="Timer control"]
     FILE_Thread [style=filled, fillcolor=bisque];
     History_Thread [style=filled, fillcolor=grey];
