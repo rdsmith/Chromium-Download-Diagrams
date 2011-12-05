@@ -375,7 +375,8 @@ digraph Download_Startup {
     FILE_Thread [style=filled, fillcolor=bisque];
     History_Thread [style=filled, fillcolor=grey];
     ResourceDispatcherHost [shape=octagon,style=filled,fillcolor=powderblue];
-    UI_Thread -> IO_Thread -> FILE_Thread -> History_Thread -> ResourceDispatcherHost  [style=invis,weight=10];
+    ChromeDownloadManagerDelegate [peripheries=2];
+    UI_Thread -> IO_Thread -> FILE_Thread -> History_Thread -> ResourceDispatcherHost -> ChromeDownloadManagerDelegate  [style=invis,weight=10];
   };
 }
 
