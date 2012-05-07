@@ -18,7 +18,6 @@ digraph initiation {
     SaveStarAs [label="Save * As"];
     SavePackageBail [label="Save Package Bail"];
     DragAndDrop [label="Drag and drop"];
-    ImageBurn [label="Image Burn"];
     WebStoreInstaller [label="Web Store Installer"];
     Navigation [fillcolor="powderblue", label="Navigation"];
     Renderer [fillcolor="powderblue"];
@@ -34,7 +33,6 @@ digraph initiation {
     SaveStarAs -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
     DragAndDrop -> DM_DownloadUrl [label="includes stream"];
     PepperSave -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
-    ImageBurn -> DM_DownloadUrl;
     SavePackageBail -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
     WebStoreInstaller -> DM_DownloadUrl;
     Navigation -> DownloadThrottlingResourceHandler;
