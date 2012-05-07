@@ -9,10 +9,13 @@ digraph initiation {
     DownloadThrottlingResourceHandler [label="DownloadThrottlingesourceHandler\n"];
 
     RMF_OnDownloadUrl [shape=record, label="{ { url | ref | message | name } | RenderMessageFilter::\nOnDownloadUrl}"];
+    RDH_BeginSaveFile [shape=record, label="{ {url | ref | rphAndViewId | context} | ResourceDispatcherHostImpl::\nBeginSaveFile}"];
+    SaveFileResourceHandler [shape=record, label="{ { rphAndViewId | url | SFM } | SaveFileResourceHandler}"];
 
     node[fillcolor=palegreen];
     DM_DownloadUrl [shape=record, label="{ {url | ref | ref_encoding | cache_post| save_info | web_contents | callback} | DownloadManager::\nDownloadUrl}"];
-
+    WCI_SaveUrl [label="WebContentsImpl::SaveUrl"];
+    SFM_OnSaveUrl [shape=record, label="{ {url | ref | rphAndViewId} | SaveFileManager::\nOnSaveUrl}"];
 
     node [shape=ellipse];
     SaveStarAs [label="Save * As"];
@@ -20,10 +23,11 @@ digraph initiation {
     DragAndDrop [label="Drag and drop"];
     WebStoreInstaller [label="Web Store Installer"];
     Navigation [fillcolor="powderblue", label="Navigation"];
-    Renderer [fillcolor="powderblue"];
+    Renderer [fillcolor="powderblue", label="WebKit\ndisposition\ndownload"];
     PepperSave [fillcolor="powderblue"];
     ExtensionApi [label="Download\nExtension API"];
     PluginInstaller [label="Plugin Installer"];
+    SavePackageNetFile [label="Save Package Subresource",fillcolor=palegreen];
 
     // Connections
     edge [color=black];
@@ -34,12 +38,16 @@ digraph initiation {
     DownloadThrottlingResourceHandler -> DownloadResourceHandler [label="Null DownloadSaveInfo()\nprompt = false"];
     SaveStarAs -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
     DragAndDrop -> DM_DownloadUrl [label="includes stream"];
-    PepperSave -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
-    SavePackageBail -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
+    PepperSave -> WCI_SaveUrl [color="pink", label="No thread crossing??"];
+    SavePackageBail -> WCI_SaveUrl;
     WebStoreInstaller -> DM_DownloadUrl;
     Navigation -> DownloadThrottlingResourceHandler;
     ExtensionApi -> RDH_BeginDownload [color=red];
     PluginInstaller -> RDH_BeginDownload [color=red];
+    WCI_SaveUrl -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
+    SavePackageNetFile -> SFM_OnSaveUrl;
+    SFM_OnSaveUrl -> RDH_BeginSaveFile [color=red];;
+    RDH_BeginSaveFile -> SaveFileResourceHandler;
 
     edge [color=red];
     DM_DownloadUrl -> anon_BeginDownload;
@@ -47,7 +55,7 @@ digraph initiation {
 
     node ArgumentExplanation [shape=box, fillcolor=white,label="Function Arguments\n\nurl:				URL to download\lref:				Referring URL\lref_charset:		??\ltab_contents:		TabContents requesting download.\lsave_info:		Name and possibly stream for output file\lrdh:				ResourceDispatcherHost\lrphAndViewId:	The Renderer host and view ID\lcontext:			ResourceContext\lprompt:			boolean indicating whether to prompt\lDFM:			DownloadFileManager\l"];
 
-    ArgumentExplanation -> Navigation [style=invis];
+    anon_BeginDownload -> ArgumentExplanation [style=invis];
 
 };
 
