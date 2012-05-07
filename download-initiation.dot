@@ -4,42 +4,44 @@ digraph initiation {
     node [fillcolor=powderblue];
     DownloadResourceHandler [shape=record,label="{ {url | rdh | rphAndViewId | request_id | prompt | DFM} | DownloadResourceHandler\n\n- Initializes from input values\l- download_id from DFM::GetNextId()\l- prompt = prompt && null DownloadSaveInfo\l}"];
     RDH_BeginDownload [shape=record,label="{ {url | ref | save_info | prompt | rdh(this) | rphAndViewId | context} | ResourceDispatcherHost::\nBeginDownload\n\n- Blocks if shutdown, renderer disallowed,\l  url unhandleable.\l- Creates URLReqeust, RDHRI, SBRH (opt),\l  DownloadResourceHandler }"];
-
-    du_DownloadUrl [shape=record,label="{ {url | ref | ref_charset | tab_contents | save_info | rdh | rphAndViewId | context} | download_util::\nDownloadUrl\n\n- Gets URLRequestContext and sets charset\l}"];
+    anon_BeginDownload [shape=record, label="{ { URLParams | save_info | rdh | RenderParams | resource_context | callback } | \<anon\>::\nBeginDownload\n\n- Setup Request.\l}"];
 
     DownloadThrottlingResourceHandler [label="DownloadThrottlingesourceHandler\n"];
 
     RMF_OnDownloadUrl [shape=record, label="{ { url | ref | message | name } | RenderMessageFilter::\nOnDownloadUrl}"];
 
     node[fillcolor=palegreen];
-    DM_DownloadUrlToFile [shape=record, label="{ {url | ref | ref_charset | tab_contents | save_info} | DownloadManager::\nDownloadUrlToFile\n\n- Get ids from tab_contents and\l  request_context_getter_ from self.\l}"];
+    DM_DownloadUrl [shape=record, label="{ {url | ref | ref_encoding | cache_post| save_info | web_contents | callback} | DownloadManager::\nDownloadUrl}"];
 
-    DM_DownloadUrl [shape=record, label="{ {url | ref | ref_charset | tab_contents} | DownloadManager::\nDownloadUrl}"];
 
     node [shape=ellipse];
     SaveStarAs [label="Save * As"];
     SavePackageBail [label="Save Package Bail"];
     DragAndDrop [label="Drag and drop"];
     ImageBurn [label="Image Burn"];
+    WebStoreInstaller [label="Web Store Installer"];
     Navigation [fillcolor="powderblue", label="Navigation"];
     Renderer [fillcolor="powderblue"];
+    PepperSave [fillcolor="powderblue"];
 
     // Connections
     edge [color=black];
     Renderer -> RMF_OnDownloadUrl;
     RMF_OnDownloadUrl -> RDH_BeginDownload [label="prompt = false"];
-    DM_DownloadUrl -> DM_DownloadUrlToFile [label="Null DownloadSaveInfo()"];
-    du_DownloadUrl -> RDH_BeginDownload [label="prompt = true"];
+    anon_BeginDownload -> RDH_BeginDownload;
     RDH_BeginDownload -> DownloadResourceHandler;
     DownloadThrottlingResourceHandler -> DownloadResourceHandler [label="Null DownloadSaveInfo()\nprompt = false"];
-    SaveStarAs -> DM_DownloadUrl;
-    DragAndDrop -> DM_DownloadUrlToFile;
-    ImageBurn -> DM_DownloadUrlToFile;
-    SavePackageBail -> DM_DownloadUrl;
+    SaveStarAs -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
+    DragAndDrop -> DM_DownloadUrl [label="includes stream"];
+    PepperSave -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
+    ImageBurn -> DM_DownloadUrl;
+    SavePackageBail -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
+    WebStoreInstaller -> DM_DownloadUrl;
     Navigation -> DownloadThrottlingResourceHandler;
 
     edge [color=red];
-    DM_DownloadUrlToFile -> du_DownloadUrl;
+    DM_DownloadUrl -> anon_BeginDownload;
+
 
     node ArgumentExplanation [shape=box, fillcolor=white,label="Function Arguments\n\nurl:				URL to download\lref:				Referring URL\lref_charset:		??\ltab_contents:		TabContents requesting download.\lsave_info:		Name and possibly stream for output file\lrdh:				ResourceDispatcherHost\lrphAndViewId:	The Renderer host and view ID\lcontext:			ResourceContext\lprompt:			boolean indicating whether to prompt\lDFM:			DownloadFileManager\l"];
 
