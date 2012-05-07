@@ -9,7 +9,7 @@ digraph initiation {
     DownloadThrottlingResourceHandler [label="DownloadThrottlingesourceHandler\n"];
 
     RMF_OnDownloadUrl [shape=record, label="{ { url | ref | message | name } | RenderMessageFilter::\nOnDownloadUrl}"];
-    RDH_BeginSaveFile [shape=record, label="{ {url | ref | rphAndViewId | context} | ResourceDispatcherHostImpl::\nBeginSaveFile}"];
+    RDH_BeginSaveFile [shape=record, label="{ {url | ref | rphAndViewId | context} | ResourceDispatcherHostImpl::\nBeginSaveFile\n\n- Setup request and begin it\l}"];
     SaveFileResourceHandler [shape=record, label="{ { rphAndViewId | url | SFM } | SaveFileResourceHandler}"];
 
     node[fillcolor=palegreen];
