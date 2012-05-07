@@ -22,6 +22,7 @@ digraph initiation {
     Navigation [fillcolor="powderblue", label="Navigation"];
     Renderer [fillcolor="powderblue"];
     PepperSave [fillcolor="powderblue"];
+    ExtensionApi [label="Download\nExtension API"];
 
     // Connections
     edge [color=black];
@@ -36,6 +37,7 @@ digraph initiation {
     SavePackageBail -> DM_DownloadUrl [label="prompt, null path,\nfrom cache"];
     WebStoreInstaller -> DM_DownloadUrl;
     Navigation -> DownloadThrottlingResourceHandler;
+    ExtensionApi -> RDH_BeginDownload [color=red];
 
     edge [color=red];
     DM_DownloadUrl -> anon_BeginDownload;
